@@ -39,6 +39,11 @@ class TestActivity : Activity() {
             Log.i(TAG, "UDP fake-resolver padded FAIL ${t.javaClass.simpleName}: ${t.message}")
         }
         try {
+            udpReuseCookie(fakeUdp, name, 4)
+        } catch (t: Throwable) {
+            Log.i(TAG, "UDP fake-resolver cookie FAIL ${t.javaClass.simpleName}: ${t.message}")
+        }
+        try {
             repeat(2) { index ->
                 val id = Random.nextInt(1, 65535)
                 val query = buildQuery(id, name)
@@ -115,6 +120,40 @@ class TestActivity : Activity() {
                 Log.i(TAG, "UDP fake-resolver padded #$index ${elapsed}ms -> ${if (ok) "OK" else "FAIL"}")
             }
         }
+    }
+
+    private fun udpReuseCookie(host: String, name: String, count: Int) {
+        DatagramSocket().use { socket ->
+            socket.soTimeout = 4000
+            socket.connect(InetSocketAddress(InetAddress.getByName(host), 53))
+            repeat(count) { index ->
+                val id = Random.nextInt(1, 65535)
+                val cookie = ByteArray(8) { (index + 1 + it).toByte() }
+                val query = buildCookieQuery(id, name, cookie)
+                val started = System.nanoTime()
+                val ok = exchange(socket, query, id)
+                val elapsed = (System.nanoTime() - started) / 1_000_000
+                Log.i(TAG, "UDP fake-resolver cookie #$index ${elapsed}ms -> ${if (ok) "OK" else "FAIL"}")
+            }
+        }
+    }
+
+    private fun buildCookieQuery(id: Int, name: String, cookie: ByteArray): ByteArray {
+        val out = buildQuery(id, name).toMutableList()
+        out[10] = 0
+        out[11] = 1 // ARCOUNT
+        out.add(0)
+        out.add(0x00); out.add(41)
+        out.add(0x04); out.add(0xD0.toByte()) // UDP payload size 1232
+        out.add(0); out.add(0); out.add(0); out.add(0)
+        val rdLength = 4 + cookie.size
+        out.add(((rdLength ushr 8) and 0xff).toByte())
+        out.add((rdLength and 0xff).toByte())
+        out.add(0); out.add(10) // COOKIE
+        out.add(((cookie.size ushr 8) and 0xff).toByte())
+        out.add((cookie.size and 0xff).toByte())
+        cookie.forEach { out.add(it) }
+        return out.toByteArray()
     }
 
     private fun buildPaddedQuery(id: Int, name: String, padding: Int): ByteArray {

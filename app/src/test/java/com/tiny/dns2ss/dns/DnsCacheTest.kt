@@ -47,6 +47,24 @@ class DnsCacheTest {
     }
 
     @Test
+    fun varyingEdnsCookiesShareCache() {
+        val first = makeCookieQuery(21, "example.com", byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8))
+        val second = makeCookieQuery(22, "EXAMPLE.COM", byteArrayOf(8, 7, 6, 5, 4, 3, 2, 1))
+        val response = makeCookieResponse(21, ttl = 60)
+        val cache = DnsCache()
+        assertTrue(cache.store(first, response, response.size, nowMs = 1_000))
+        val hit = cache.lookup(second, second.size, nowMs = 1_500)
+        assertNotNull(hit)
+    }
+
+    @Test
+    fun cachedResponseDropsCookieOption() {
+        val response = makeCookieResponse(31, ttl = 60)
+        val stripped = DnsWire.stripOptOption(response, response.size, DnsWire.OPT_COOKIE)
+        assertEquals(response.size - 12, stripped.size)
+    }
+
+    @Test
     fun negativeAnswerUsesSoaTtl() {
         val query = makeQuery(id = 7, name = "example.com")
         val response = makeNegativeResponse(id = 7, ttl = 120)
@@ -94,6 +112,43 @@ class DnsCacheTest {
         out.add(((padding ushr 8) and 0xff).toByte())
         out.add((padding and 0xff).toByte())
         repeat(padding) { out.add(0) }
+        return out.toByteArray()
+    }
+
+    private fun makeCookieQuery(id: Int, name: String, cookie: ByteArray): ByteArray {
+        val base = makeQuery(id = id, name = name)
+        val header = base.copyOf()
+        header[10] = 0; header[11] = 1 // ARCOUNT
+        val out = ArrayList<Byte>()
+        header.forEach { out.add(it) }
+        out.add(0) // OPT owner root
+        out.add(0x00); out.add(41)
+        out.add(0x04); out.add(0xD0.toByte()) // UDP payload size 1232
+        out.add(0); out.add(0); out.add(0); out.add(0)
+        val rdLength = 4 + cookie.size
+        out.add(((rdLength ushr 8) and 0xff).toByte())
+        out.add((rdLength and 0xff).toByte())
+        out.add(0x00); out.add(10) // COOKIE
+        out.add(((cookie.size ushr 8) and 0xff).toByte())
+        out.add((cookie.size and 0xff).toByte())
+        cookie.forEach { out.add(it) }
+        return out.toByteArray()
+    }
+
+    private fun makeCookieResponse(id: Int, ttl: Int): ByteArray {
+        val base = makeResponse(id = id, ttl = ttl)
+        val header = base.copyOf()
+        header[10] = 0; header[11] = 1 // ARCOUNT
+        val out = ArrayList<Byte>()
+        header.forEach { out.add(it) }
+        out.add(0) // OPT owner root
+        out.add(0x00); out.add(41)
+        out.add(0x04); out.add(0xD0.toByte())
+        out.add(0); out.add(0); out.add(0); out.add(0)
+        out.add(0); out.add(12) // rdlength 12
+        out.add(0x00); out.add(10) // COOKIE
+        out.add(0); out.add(8)
+        repeat(8) { out.add(0x55) }
         return out.toByteArray()
     }
 

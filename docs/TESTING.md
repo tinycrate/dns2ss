@@ -22,7 +22,7 @@ Unit coverage currently includes:
 
 - SS URI parsing (SIP002, legacy, AEAD/2022, rejected plugins);
 - sslocal and hev config builders;
-- DNS cache positive TTL/ID/question-case behavior, expiry, EDNS-padding key normalization, and SOA-based negative caching;
+- DNS cache positive TTL/ID/question-case behavior, expiry, EDNS padding/COOKIE key normalization, cached-response COOKIE stripping, and SOA-based negative caching;
 - byte-unit formatting;
 - SOCKS5 address/IPv4/IPv6/domain/UDP/fragment handling.
 

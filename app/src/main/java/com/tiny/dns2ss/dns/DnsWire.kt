@@ -56,8 +56,8 @@ internal object DnsWire {
 
     /**
      * Stable cache key: ID removed, question-name case folded, and EDNS padding/NSID
-     * options removed. Android's stub resolver pads queries, and padding length is
-     * deliberately varied; including it would defeat every cache hit.
+     * and COOKIE data removed. Android pads queries with a varying length, and dig/
+     * resolvers rotate the 8-byte client cookie; either one would defeat every hit.
      */
     fun cacheKey(query: ByteArray, length: Int): String? {
         val question = parseQuestion(query, length) ?: return null
@@ -104,7 +104,7 @@ internal object DnsWire {
                     val optionLength = u16(query, option + 2)
                     val optionEnd = option + 4 + optionLength
                     if (optionEnd > end) return null
-                    if (code != OPT_PADDING && code != OPT_NSID) {
+                    if (code != OPT_PADDING && code != OPT_NSID && code != OPT_COOKIE) {
                         writeU16(out, code)
                         writeU16(out, optionLength)
                         out.write(query, option + 4, optionLength)
@@ -119,6 +119,66 @@ internal object DnsWire {
         }
         if (p != length) out.write(query, p, length - p)
         return Base64.getUrlEncoder().withoutPadding().encodeToString(out.toByteArray())
+    }
+
+    /**
+     * Removes an EDNS option from the additional OPT record. Used to keep a cached
+     * response from replaying a server cookie bound to a different client cookie.
+     */
+    fun stripOptOption(response: ByteArray, length: Int, optionCode: Int): ByteArray {
+        val copy = response.copyOf(length)
+        if (length < 12) return copy
+        val question = parseQuestion(response, length) ?: return copy
+        var p = question.questionEnd
+        val anCount = u16(response, 6)
+        val nsCount = u16(response, 8)
+        val arCount = u16(response, 10)
+        repeat(anCount + nsCount) {
+            val nameEnd = skipName(response, p, length) ?: return copy
+            if (nameEnd + 10 > length) return copy
+            val rdLength = u16(response, nameEnd + 8)
+            p = nameEnd + 10 + rdLength
+            if (p > length) return copy
+        }
+        repeat(arCount) {
+            val nameEnd = skipName(response, p, length) ?: return copy
+            if (nameEnd + 10 > length) return copy
+            val type = u16(response, nameEnd)
+            val rdLengthOffset = nameEnd + 8
+            val rdLength = u16(response, rdLengthOffset)
+            val rdStart = nameEnd + 10
+            val rdEnd = rdStart + rdLength
+            if (rdEnd > length) return copy
+            if (type == TYPE_OPT) {
+                val filtered = ByteArrayOutputStream(rdLength)
+                var option = rdStart
+                var removed = 0
+                while (option + 4 <= rdEnd) {
+                    val code = u16(response, option)
+                    val optionLength = u16(response, option + 2)
+                    val optionEnd = option + 4 + optionLength
+                    if (optionEnd > rdEnd) return copy
+                    if (code == optionCode) {
+                        removed += 4 + optionLength
+                    } else {
+                        filtered.write(response, option, 4 + optionLength)
+                    }
+                    option = optionEnd
+                }
+                if (option != rdEnd) return copy
+                if (removed == 0) return copy
+                val newRd = filtered.toByteArray()
+                val out = ByteArray(length - removed)
+                System.arraycopy(response, 0, out, 0, rdStart)
+                System.arraycopy(newRd, 0, out, rdStart, newRd.size)
+                System.arraycopy(response, rdEnd, out, rdStart + newRd.size, length - rdEnd)
+                out[rdLengthOffset] = ((newRd.size ushr 8) and 0xff).toByte()
+                out[rdLengthOffset + 1] = (newRd.size and 0xff).toByte()
+                return out
+            }
+            p = rdEnd
+        }
+        return copy
     }
 
     private fun writeU16(out: ByteArrayOutputStream, value: Int) {
@@ -267,6 +327,7 @@ internal object DnsWire {
 
     private const val TYPE_SOA = 6
     private const val TYPE_OPT = 41
+    const val OPT_COOKIE = 10
     private const val OPT_NSID = 3
     private const val OPT_PADDING = 12
     private const val MAX_CACHE_TTL_SECONDS = 86_400

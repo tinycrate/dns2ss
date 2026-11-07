@@ -60,7 +60,8 @@ class DnsCache(
         nowMs: Long = System.currentTimeMillis(),
     ): Boolean {
         val key = DnsWire.cacheKey(query, query.size) ?: return false
-        val entry = DnsWire.analyzeResponse(query, response, responseLength, nowMs) ?: return false
+        val sanitized = DnsWire.stripOptOption(response, responseLength, DnsWire.OPT_COOKIE)
+        val entry = DnsWire.analyzeResponse(query, sanitized, sanitized.size, nowMs) ?: return false
         synchronized(cache) {
             cache[key] = entry
         }
