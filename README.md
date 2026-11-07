@@ -36,7 +36,7 @@ VpnService TUN
 
 - The virtual DNS addresses are `198.18.0.2` and `fd00::2`.
 - Fast mode routes the virtual DNS addresses plus the current underlying network's DNS server IPs into the TUN. The diagnostics screen lists the discovered resolver IPs.
-- Strict and Full add `0.0.0.0/0` and `::/0`.
+- Strict and Full add `0.0.0.0/0` and, when IPv6 is enabled, `::/0`.
 - The app itself is excluded from the VPN so its SS connection and direct sockets do not loop.
 - **Debug builds only** additionally exclude `com.android.shell`; this exists for local emulator testing with an SS server running under `adb shell`. Release builds do not exclude shell.
 - DNS requests share one long-lived UDP socket to sslocal. Transaction IDs are multiplexed, so clients do not each create an SS UDP association.
@@ -45,6 +45,7 @@ VpnService TUN
 - Network changes trigger a debounced service restart, recalculating Fast-mode resolver routes and rebuilding the SS connection.
 - There is no one-second stats polling. Diagnostics read live counters on demand.
 - Traffic counters count TCP relay bytes as well as UDP payloads. Fast-mode non-DNS traffic bypasses the app and is therefore not measured.
+- IPv6 is optional. When disabled, dns2ss does not add IPv6 TUN addresses, IPv6 DNS servers, or IPv6 routes; IPv6 is left to the underlying network and is not tunneled.
 
 ## Requirements
 
@@ -80,7 +81,7 @@ Test client:
 ## Usage
 
 1. Open dns2ss.
-2. Open **Settings** and enter a Shadowsocks URI (`ss://...`) and the remote DNS target (`127.0.0.1:53530` by default).
+2. Open **Settings** and enter a Shadowsocks URI (`ss://...`) and the remote DNS target (`127.0.0.1:53530` by default). The **Enable IPv6** switch applies after a VPN restart; disable it if the server or network has no usable IPv6.
 3. Select Fast, Strict, or Full on the landing page.
 4. Press Start and grant VPN permission.
 5. Use the Quick Settings tile after the first successful start. The tile shows the selected/active mode in its label and reconnects on mode changes.
@@ -105,10 +106,16 @@ The Diagnostics page shows:
 - DNS query/response/pending counts;
 - tunnel/direct/full byte counters (formatted as B/KB/MB/GB) and errors;
 - Private DNS mode;
-- log verbosity (Off / Errors / Warnings / Info / Debug);
-- a scrollable, selectable log with optional line wrapping.
+- applied log verbosity (Off / Errors / Warnings / Info / Debug);
+- IPv6 enabled/disabled;
+- a vertically scrollable log with optional line wrapping and a Copy button.
 
-The log area scrolls both vertically and horizontally by default. The **Wrap log lines** switch enables wrapped text. Selection and the Copy button both work. Changing log verbosity shows the restart note; simply opening the page does not.
+The no-wrap log view scrolls vertically and horizontally; the **Wrap log lines** switch selects a wrapped, vertically scrolling view. Text selection is disabled so drag gestures reach the log scroller; the Copy button copies the full visible log. Changing log verbosity shows the restart note; simply opening the page does not.
+
+### Log notes
+
+- sslocal's `no valid UDP server serving` WARN is a load-balancer probe warning at startup. With a single configured server it still chooses that server; created UDP associations confirm forwarding is working.
+- TCP port 53 is proxied too, so sslocal may establish a TCP tunnel to the remote DNS address. This is normal TCP DNS (fallback/truncated responses or clients preferring TCP).
 
 ## Testing
 
@@ -121,6 +128,7 @@ The log area scrolls both vertically and horizontally by default. The **Wrap log
 - **DoH** (port 443) bypasses port 53. Disable browser secure DNS and block DoH hostnames in the remote DNS blocklist.
 - **Fast mode** intentionally does not capture hardcoded plain DNS to arbitrary servers.
 - **Loopback DNS** (`127.0.0.1:53`/`::1`) cannot be captured by a VPN.
+- **IPv6 disabled** means IPv6 is not tunneled; apps may still use IPv6 through the underlying network. Disable IPv6 on the network itself for a hard block.
 - Apps that explicitly bind sockets to the underlying network bypass the VPN.
 - The SS server hostname is resolved by `sslocal` using the underlying network before/outside the tunnel; use an IP if that metadata leak matters.
 - No per-app mode, always-on/lockdown, or 32-bit ABIs.
