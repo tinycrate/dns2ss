@@ -3,7 +3,7 @@ package com.tiny.dns2ss.ui
 import android.app.Application
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
-import java.util.Locale
+import com.tiny.dns2ss.util.ByteFormatter
 import com.tiny.dns2ss.config.LogVerbosity
 import com.tiny.dns2ss.vpn.AppDiagnostics
 import com.tiny.dns2ss.vpn.AppPreferences
@@ -39,7 +39,7 @@ class DiagnosticsViewModel(application: Application) : AndroidViewModel(applicat
             appendLine("Routed DNS servers: $routed")
             appendLine("Cache: ${diag.cacheEntries} entries, ${diag.cacheHits} hits, ${diag.cacheMisses} misses")
             appendLine("DNS: ${diag.dnsQueries} queries, ${diag.dnsResponses} responses, ${diag.pendingDns} pending")
-            appendLine("Traffic: tunnel ${formatBytes(diag.tunnelBytes)}, direct ${formatBytes(diag.directBytes)}, full ${formatBytes(diag.fullBytes)}")
+            appendLine("Traffic: tunnel ${ByteFormatter.format(diag.tunnelBytes)}, direct ${ByteFormatter.format(diag.directBytes)}, full ${ByteFormatter.format(diag.fullBytes)}")
             appendLine("Errors: ${diag.errors}")
             append("Private DNS: $privateDns")
         }
@@ -66,15 +66,4 @@ class DiagnosticsViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    private fun formatBytes(bytes: Long): String {
-        if (bytes < 1024) return "$bytes B"
-        val units = arrayOf("B", "KB", "MB", "GB", "TB")
-        var value = bytes.toDouble()
-        var unit = 0
-        while (value >= 1024 && unit < units.lastIndex) {
-            value /= 1024
-            unit++
-        }
-        return String.format(Locale.US, "%.1f %s", value, units[unit])
-    }
 }

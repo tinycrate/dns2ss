@@ -3,6 +3,7 @@ package com.tiny.dns2ss.dns
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DnsCacheTest {
@@ -33,6 +34,22 @@ class DnsCacheTest {
         assertNull(cache.lookup(later, later.size, nowMs = 5_001))
     }
 
+    @Test
+    fun negativeAnswerUsesSoaTtl() {
+        val query = makeQuery(id = 7, name = "example.com")
+        val response = makeNegativeResponse(id = 7, ttl = 120)
+        val cache = DnsCache()
+        assertTrue(cache.store(query, response, response.size, nowMs = 1_000))
+
+        val later = makeQuery(id = 8, name = "EXAMPLE.COM")
+        val hit = cache.lookup(later, later.size, nowMs = 11_000)
+        assertNotNull(hit)
+        hit!!
+        assertEquals(3, hit[3].toInt() and 0x0f)
+        assertEquals(110, ttl(hit, 35))
+        assertNull(cache.lookup(later, later.size, nowMs = 121_000))
+    }
+
     private fun makeQuery(id: Int, name: String): ByteArray {
         val out = ArrayList<Byte>()
         out.add((id ushr 8).toByte()); out.add(id.toByte())
@@ -46,6 +63,34 @@ class DnsCacheTest {
         out.add(0)
         out.add(0x00); out.add(0x01)
         out.add(0x00); out.add(0x01)
+        return out.toByteArray()
+    }
+
+    private fun makeNegativeResponse(id: Int, ttl: Int): ByteArray {
+        val out = ArrayList<Byte>()
+        out.add((id ushr 8).toByte()); out.add(id.toByte())
+        out.add(0x81.toByte()); out.add(0x83.toByte()) // QR, RD, RA, NXDOMAIN
+        out.add(0); out.add(1)
+        out.add(0); out.add(0)
+        out.add(0); out.add(1)
+        out.add(0); out.add(0)
+        for (label in "example.com".split('.')) {
+            out.add(label.length.toByte())
+            label.forEach { out.add(it.code.toByte()) }
+        }
+        out.add(0)
+        out.add(0x00); out.add(0x01)
+        out.add(0x00); out.add(0x01)
+        // Authority SOA, pointer to question name.
+        out.add(0xC0.toByte()); out.add(0x0C)
+        out.add(0x00); out.add(0x06)
+        out.add(0x00); out.add(0x01)
+        out.add(((ttl ushr 24) and 0xff).toByte())
+        out.add(((ttl ushr 16) and 0xff).toByte())
+        out.add(((ttl ushr 8) and 0xff).toByte())
+        out.add((ttl and 0xff).toByte())
+        out.add(0); out.add(20)
+        repeat(20) { out.add(0) }
         return out.toByteArray()
     }
 
