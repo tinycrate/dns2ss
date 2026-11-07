@@ -97,9 +97,12 @@ class DiagnosticsActivity : AppCompatActivity() {
             .setPositiveButton(R.string.copy) { _, _ -> copyLog(content.logEditor.text) }
             .setNegativeButton(android.R.string.cancel, null)
             .create()
-        dialog.setOnShowListener {
-            val metrics = resources.displayMetrics
-            dialog.window?.setLayout(
+        // Size the window before the first frame. Doing this in onShow makes the
+        // dialog appear at its default size and jump to the final bounds.
+        val metrics = resources.displayMetrics
+        dialog.window?.apply {
+            setGravity(android.view.Gravity.CENTER)
+            setLayout(
                 (metrics.widthPixels * 0.92f).toInt(),
                 (metrics.heightPixels * 0.80f).toInt(),
             )
