@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -17,7 +18,6 @@ import com.tiny.dns2ss.ui.applySystemBarInsets
 class DiagnosticsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDiagnosticsBinding
     private val viewModel: DiagnosticsViewModel by viewModels()
-    private var suppressSpinner = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,17 +31,15 @@ class DiagnosticsActivity : AppCompatActivity() {
             android.R.layout.simple_spinner_dropdown_item,
             LogVerbosity.entries.map { it.label },
         )
-        binding.logVerbosity.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                if (suppressSpinner) return
-                val selected = LogVerbosity.entries[position]
-                if (selected == viewModel.currentVerbosity()) return
+        // onItemClick fires for a user selection from the dropdown, not for the
+        // programmatic setSelection performed when this page is refreshed.
+        binding.logVerbosity.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+            val selected = LogVerbosity.entries[position]
+            if (selected != viewModel.currentVerbosity()) {
                 viewModel.setLogVerbosity(selected)
                 Toast.makeText(this@DiagnosticsActivity, R.string.log_restart_note, Toast.LENGTH_SHORT).show()
             }
-
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
-        })
+        }
 
         binding.logWrap.setOnCheckedChangeListener { _, checked -> applyLogWrap(checked) }
         applyLogWrap(false)
@@ -74,8 +72,6 @@ class DiagnosticsActivity : AppCompatActivity() {
         val state = viewModel.snapshot()
         binding.summary.text = state.summary
         binding.logs.text = state.logs.ifBlank { "-" }
-        suppressSpinner = true
         binding.logVerbosity.setSelection(LogVerbosity.entries.indexOf(state.verbosity).coerceAtLeast(0))
-        binding.logVerbosity.post { suppressSpinner = false }
     }
 }
