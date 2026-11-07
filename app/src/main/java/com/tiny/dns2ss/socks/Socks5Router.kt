@@ -152,7 +152,12 @@ class Socks5Router(private val config: RouterConfig) {
                 Socks5Protocol.CMD_CONNECT -> {
                     remote = openTcp(target)
                     Socks5Protocol.writeReply(output, Socks5Protocol.REP_SUCCESS)
-                    relay(client, remote, input, output)
+                    val counter = when {
+                        target.port == DNS_PORT -> stats.tunnelBytes
+                        config.mode == VpnMode.FULL -> stats.fullBytes
+                        else -> stats.directBytes
+                    }
+                    relay(client, remote, input, output, counter)
                 }
 
                 Socks5Protocol.CMD_UDP_ASSOCIATE -> {
@@ -212,13 +217,19 @@ class Socks5Router(private val config: RouterConfig) {
         return socket
     }
 
-    private fun relay(client: Socket, remote: Socket, clientInput: InputStream, clientOutput: OutputStream) {
+    private fun relay(
+        client: Socket,
+        remote: Socket,
+        clientInput: InputStream,
+        clientOutput: OutputStream,
+        counter: AtomicLong,
+    ) {
         val done = CountDownLatch(2)
         executor.execute {
-            copy(clientInput, remote.getOutputStream(), remote, client, done)
+            copy(clientInput, remote.getOutputStream(), remote, client, done, counter)
         }
         executor.execute {
-            copy(remote.getInputStream(), clientOutput, client, remote, done)
+            copy(remote.getInputStream(), clientOutput, client, remote, done, counter)
         }
         done.await()
         untrack(remote)
@@ -233,12 +244,14 @@ class Socks5Router(private val config: RouterConfig) {
         destinationSocket: Socket,
         sourceSocket: Socket,
         done: CountDownLatch,
+        counter: AtomicLong,
     ) {
         val buffer = ByteArray(COPY_BUFFER_SIZE)
         try {
             while (true) {
                 val read = source.read(buffer)
                 if (read < 0) break
+                counter.addAndGet(read.toLong())
                 destination.write(buffer, 0, read)
                 destination.flush()
             }

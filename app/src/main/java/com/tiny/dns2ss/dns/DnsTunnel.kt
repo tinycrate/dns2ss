@@ -116,6 +116,7 @@ class DnsTunnel(
                     runCatching { cache.store(item.query, response, length) }
                 }
                 stats.dnsResponses.incrementAndGet()
+                stats.tunnelBytes.addAndGet(length.toLong())
                 item.responder(response, item.target, item.client)
             } catch (t: Throwable) {
                 if (!running.get()) break
