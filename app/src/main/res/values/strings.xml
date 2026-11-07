@@ -47,6 +47,7 @@
     <string name="log_restart_note">Logging changes apply after the VPN is restarted.</string>
     <string name="refresh">Refresh</string>
     <string name="copy">Copy</string>
+    <string name="select_text">Select</string>
     <string name="clear">Clear</string>
     <string name="copied">Copied</string>
     <string name="routed_dns">Routed DNS servers (Fast mode): %1$s</string>

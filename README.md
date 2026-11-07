@@ -110,7 +110,7 @@ The Diagnostics page shows:
 - IPv6 enabled/disabled;
 - a vertically scrollable log with optional line wrapping and a Copy button.
 
-The no-wrap log view scrolls vertically and horizontally; the **Wrap log lines** switch selects a wrapped, vertically scrolling view. Text selection is disabled so drag gestures reach the log scroller; the Copy button copies the full visible log. Changing log verbosity shows the restart note; simply opening the page does not.
+The no-wrap log view scrolls vertically and horizontally; the **Wrap log lines** switch selects a wrapped, vertically scrolling view. Inline text selection is disabled so drag gestures always reach the log scroller. **Select** (or a long-press on the log) opens a read-only, selectable log dialog; **Copy** copies the whole visible log. Changing log verbosity shows the restart note; simply opening the page does not.
 
 ### Log notes
 

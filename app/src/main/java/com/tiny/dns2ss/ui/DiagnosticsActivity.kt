@@ -3,9 +3,13 @@ package com.tiny.dns2ss.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -57,16 +61,63 @@ class DiagnosticsActivity : AppCompatActivity() {
         binding.logWrap.setOnCheckedChangeListener { _, checked -> applyLogWrap(checked) }
         applyLogWrap(false)
         binding.refresh.setOnClickListener { refresh() }
-        binding.copy.setOnClickListener {
-            val clipboard = getSystemService(ClipboardManager::class.java)
-            clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.logs), activeLogText()))
-            Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
-        }
+        binding.select.setOnClickListener { showSelectionDialog() }
+        binding.copy.setOnClickListener { copyLog(activeLogText()) }
         binding.clear.setOnClickListener {
             viewModel.clearLogs()
             refresh()
         }
+        binding.logsNoWrap.setOnLongClickListener {
+            showSelectionDialog()
+            true
+        }
+        binding.logsWrap.setOnLongClickListener {
+            showSelectionDialog()
+            true
+        }
         refresh()
+    }
+
+    private fun copyLog(text: CharSequence) {
+        val clipboard = getSystemService(ClipboardManager::class.java)
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.logs), text))
+        Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * The inline log is non-selectable so scrolling gestures always reach the
+     * scroller. Selection is available in this dedicated read-only editor, which
+     * has its own built-in scrolling and selection behavior.
+     */
+    private fun showSelectionDialog() {
+        val editor = EditText(this).apply {
+            setText(activeLogText())
+            setTextIsSelectable(true)
+            setSingleLine(false)
+            inputType = InputType.TYPE_NULL
+            isFocusable = true
+            isFocusableInTouchMode = true
+            isCursorVisible = false
+            showSoftInputOnFocus = false
+            setPadding(24, 24, 24, 24)
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall)
+        }
+        val height = (resources.displayMetrics.heightPixels * 0.62f).toInt()
+        val container = FrameLayout(this).apply {
+            addView(
+                editor,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    height,
+                ),
+            )
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.logs)
+            .setView(container)
+            .setPositiveButton(R.string.copy) { _, _ -> copyLog(editor.text) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     override fun onResume() {
