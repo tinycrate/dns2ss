@@ -40,7 +40,7 @@ VpnService TUN
 - The app itself is excluded from the VPN so its SS connection and direct sockets do not loop.
 - **Debug builds only** additionally exclude `com.android.shell`; this exists for local emulator testing with an SS server running under `adb shell`. Release builds do not exclude shell.
 - DNS requests share one long-lived UDP socket to sslocal. Transaction IDs are multiplexed, so clients do not each create an SS UDP association.
-- Responses are cached by normalized question + query options. TTLs are decremented on every cache hit; negative answers use the SOA TTL; truncated/error responses are not cached.
+- Responses are cached by normalized question + query options, with EDNS padding/NSID ignored (Android's stub resolver pads queries and varies the padding length). TTLs are decremented on every cache hit; negative answers use the SOA TTL; truncated/error responses are not cached.
 - `socks5.pipeline: true` removes the first-UDP-association stall that otherwise dominated cold DNS latency. Cache hits are effectively immediate; cold queries are single-digit milliseconds on a local test path.
 - Network changes trigger a debounced service restart, recalculating Fast-mode resolver routes and rebuilding the SS connection.
 - There is no one-second stats polling. Diagnostics read live counters on demand.
@@ -125,7 +125,7 @@ From the repository root:
 .\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :testclient:assembleDebug
 ```
 
-The JVM suite currently has 20 tests covering URI parsing, SS/HEV config builders, DNS cache positive/negative TTL behavior, byte formatting, and SOCKS5 address/UDP parsing. Device and local-server tools are described in [docs/TESTING.md](docs/TESTING.md). Environment-specific test notes are kept under `tests/`.
+The JVM suite currently has 21 tests covering URI parsing, SS/HEV config builders, DNS cache positive/negative TTL and EDNS-padding behavior, byte formatting, and SOCKS5 address/UDP parsing. Device and local-server tools are described in [docs/TESTING.md](docs/TESTING.md). Environment-specific test notes are kept under `tests/`.
 
 ## Documentation
 

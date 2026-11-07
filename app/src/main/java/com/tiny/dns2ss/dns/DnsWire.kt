@@ -1,5 +1,6 @@
 package com.tiny.dns2ss.dns
 
+import java.io.ByteArrayOutputStream
 import java.util.Base64
 
 /**
@@ -53,24 +54,83 @@ internal object DnsWire {
         )
     }
 
-    /** Stable cache key: ID cleared and question-name ASCII case folded. */
+    /**
+     * Stable cache key: ID removed, question-name case folded, and EDNS padding/NSID
+     * options removed. Android's stub resolver pads queries, and padding length is
+     * deliberately varied; including it would defeat every cache hit.
+     */
     fun cacheKey(query: ByteArray, length: Int): String? {
         val question = parseQuestion(query, length) ?: return null
-        val copy = query.copyOf(length)
-        copy[0] = 0
-        copy[1] = 0
+        if (question.questionEnd > length) return null
+        val out = ByteArrayOutputStream(length)
+        out.write(query[2].toInt() and 0xff)
+        out.write(query[3].toInt() and 0xff)
+
+        // Canonical question name, preserving label lengths and ASCII case folding.
         var p = question.nameStart
         while (p < question.nameEnd) {
-            val label = copy[p].toInt() and 0xff
+            val label = query[p].toInt() and 0xff
+            out.write(label)
             p++
             if (label == 0) break
-            for (i in 0 until label) {
-                if (p + i >= question.nameEnd) return null
-                copy[p + i] = lowerAscii(copy[p + i])
-            }
+            if (label > 63 || p + label > question.nameEnd) return null
+            for (i in 0 until label) out.write(lowerAscii(query[p + i]).toInt() and 0xff)
             p += label
         }
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(copy)
+        out.write(query, question.questionEnd - 4, 4) // qtype, qclass
+
+        val additional = u16(query, 10)
+        p = question.questionEnd
+        repeat(additional) {
+            val recordStart = p
+            val nameEnd = skipName(query, p, length) ?: return null
+            if (nameEnd + 10 > length) return null
+            val type = u16(query, nameEnd)
+            val klass = u16(query, nameEnd + 2)
+            val ttl = u32(query, nameEnd + 4)
+            val rdLength = u16(query, nameEnd + 8)
+            val rdStart = nameEnd + 10
+            val end = rdStart + rdLength
+            if (end > length) return null
+
+            if (type == TYPE_OPT) {
+                out.write(0) // normalized OPT marker
+                writeU16(out, type)
+                writeU16(out, klass)
+                writeU32(out, ttl)
+                var option = rdStart
+                while (option + 4 <= end) {
+                    val code = u16(query, option)
+                    val optionLength = u16(query, option + 2)
+                    val optionEnd = option + 4 + optionLength
+                    if (optionEnd > end) return null
+                    if (code != OPT_PADDING && code != OPT_NSID) {
+                        writeU16(out, code)
+                        writeU16(out, optionLength)
+                        out.write(query, option + 4, optionLength)
+                    }
+                    option = optionEnd
+                }
+                if (option != end) return null
+            } else {
+                out.write(query, recordStart, end - recordStart)
+            }
+            p = end
+        }
+        if (p != length) out.write(query, p, length - p)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(out.toByteArray())
+    }
+
+    private fun writeU16(out: ByteArrayOutputStream, value: Int) {
+        out.write((value ushr 8) and 0xff)
+        out.write(value and 0xff)
+    }
+
+    private fun writeU32(out: ByteArrayOutputStream, value: Int) {
+        out.write((value ushr 24) and 0xff)
+        out.write((value ushr 16) and 0xff)
+        out.write((value ushr 8) and 0xff)
+        out.write(value and 0xff)
     }
 
     fun analyzeResponse(query: ByteArray, response: ByteArray, length: Int, nowMs: Long): CacheEntry? {
@@ -207,5 +267,7 @@ internal object DnsWire {
 
     private const val TYPE_SOA = 6
     private const val TYPE_OPT = 41
+    private const val OPT_NSID = 3
+    private const val OPT_PADDING = 12
     private const val MAX_CACHE_TTL_SECONDS = 86_400
 }

@@ -68,7 +68,7 @@ DNS uses one shared UDP socket into the sslocal tunnel, with transaction IDs mul
 
 Cache behavior:
 
-- key includes normalized question + EDNS/query options;
+- key includes normalized question + relevant query options, ignoring EDNS PADDING/NSID (Android varies padding length);
 - positive entries expire at the minimum record TTL;
 - negative entries use the SOA TTL;
 - truncated and non-NOERROR/NXDOMAIN responses are not cached;

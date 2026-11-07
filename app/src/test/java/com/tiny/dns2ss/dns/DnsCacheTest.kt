@@ -35,6 +35,18 @@ class DnsCacheTest {
     }
 
     @Test
+    fun ednsPaddingDoesNotDefeatCache() {
+        val first = makePaddedQuery(id = 11, name = "example.com", padding = 16)
+        val second = makePaddedQuery(id = 12, name = "EXAMPLE.COM", padding = 64)
+        val response = makeResponse(id = 11, ttl = 60)
+        val cache = DnsCache()
+        assertTrue(cache.store(first, response, response.size, nowMs = 1_000))
+        val hit = cache.lookup(second, second.size, nowMs = 1_999)
+        assertNotNull(hit)
+        assertEquals(60, ttl(hit!!, 35))
+    }
+
+    @Test
     fun negativeAnswerUsesSoaTtl() {
         val query = makeQuery(id = 7, name = "example.com")
         val response = makeNegativeResponse(id = 7, ttl = 120)
@@ -63,6 +75,25 @@ class DnsCacheTest {
         out.add(0)
         out.add(0x00); out.add(0x01)
         out.add(0x00); out.add(0x01)
+        return out.toByteArray()
+    }
+
+    private fun makePaddedQuery(id: Int, name: String, padding: Int): ByteArray {
+        val header = makeQuery(id = id, name = name).copyOf()
+        header[10] = 0; header[11] = 1 // ARCOUNT = 1
+        val out = ArrayList<Byte>()
+        header.forEach { out.add(it) }
+        out.add(0) // root name
+        out.add(0x00); out.add(41) // OPT
+        out.add(0x10); out.add(0x00) // UDP payload size 4096
+        out.add(0); out.add(0); out.add(0); out.add(0) // no DO, version 0
+        val rdLength = 4 + padding
+        out.add(((rdLength ushr 8) and 0xff).toByte())
+        out.add((rdLength and 0xff).toByte())
+        out.add(0x00); out.add(12) // EDNS PADDING option
+        out.add(((padding ushr 8) and 0xff).toByte())
+        out.add((padding and 0xff).toByte())
+        repeat(padding) { out.add(0) }
         return out.toByteArray()
     }
 

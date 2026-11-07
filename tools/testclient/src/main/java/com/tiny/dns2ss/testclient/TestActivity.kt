@@ -34,6 +34,11 @@ class TestActivity : Activity() {
             Log.i(TAG, "UDP fake-resolver reuse FAIL ${t.javaClass.simpleName}: ${t.message}")
         }
         try {
+            udpReusePadded(fakeUdp, name, 4)
+        } catch (t: Throwable) {
+            Log.i(TAG, "UDP fake-resolver padded FAIL ${t.javaClass.simpleName}: ${t.message}")
+        }
+        try {
             repeat(2) { index ->
                 val id = Random.nextInt(1, 65535)
                 val query = buildQuery(id, name)
@@ -94,6 +99,40 @@ class TestActivity : Activity() {
                 Log.i(TAG, "UDP fake-resolver reuse #$index ${elapsed}ms -> ${if (ok) "OK" else "FAIL"}")
             }
         }
+    }
+
+    private fun udpReusePadded(host: String, name: String, count: Int) {
+        DatagramSocket().use { socket ->
+            socket.soTimeout = 4000
+            val address = InetSocketAddress(InetAddress.getByName(host), 53)
+            socket.connect(address)
+            repeat(count) { index ->
+                val id = Random.nextInt(1, 65535)
+                val query = buildPaddedQuery(id, name, 8 + index * 16)
+                val started = System.nanoTime()
+                val ok = exchange(socket, query, id)
+                val elapsed = (System.nanoTime() - started) / 1_000_000
+                Log.i(TAG, "UDP fake-resolver padded #$index ${elapsed}ms -> ${if (ok) "OK" else "FAIL"}")
+            }
+        }
+    }
+
+    private fun buildPaddedQuery(id: Int, name: String, padding: Int): ByteArray {
+        val out = buildQuery(id, name).toMutableList()
+        out[10] = 0
+        out[11] = 1 // ARCOUNT
+        out.add(0) // OPT owner root
+        out.add(0x00); out.add(41) // OPT
+        out.add(0x10); out.add(0x00) // UDP payload size 4096
+        out.add(0); out.add(0); out.add(0); out.add(0)
+        val rdLength = 4 + padding
+        out.add(((rdLength ushr 8) and 0xff).toByte())
+        out.add((rdLength and 0xff).toByte())
+        out.add(0); out.add(12) // PADDING option
+        out.add(((padding ushr 8) and 0xff).toByte())
+        out.add((padding and 0xff).toByte())
+        repeat(padding) { out.add(0) }
+        return out.toByteArray()
     }
 
     private fun exchange(socket: DatagramSocket, query: ByteArray, id: Int): Boolean {
