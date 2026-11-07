@@ -9,6 +9,7 @@ data class SettingsUiState(
     val ssUri: String = "",
     val dnsHost: String = AppPreferences.DEFAULT_DNS_HOST,
     val dnsPort: Int = AppPreferences.DEFAULT_DNS_PORT,
+    val ipv6Enabled: Boolean = true,
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -18,10 +19,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         ssUri = prefs.ssUri,
         dnsHost = prefs.dnsHost,
         dnsPort = prefs.dnsPort,
+        ipv6Enabled = prefs.ipv6Enabled,
     )
 
     /** Returns null on success, otherwise a user-facing error. */
-    fun save(ssUri: String, dnsHost: String, dnsPortText: String): String? {
+    fun save(ssUri: String, dnsHost: String, dnsPortText: String, ipv6Enabled: Boolean): String? {
         val host = dnsHost.trim()
         val port = dnsPortText.trim().toIntOrNull() ?: return "DNS port is not a number"
         return try {
@@ -29,7 +31,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             require(host.isNotEmpty()) { "DNS target host is empty" }
             require(host.none { it.isWhitespace() }) { "DNS target host contains whitespace" }
             require(port in 1..65535) { "DNS port is out of range" }
-            prefs.save(ssUri, prefs.mode, host, port)
+            prefs.save(ssUri, prefs.mode, host, port, ipv6Enabled)
             null
         } catch (t: Throwable) {
             t.message ?: "Invalid configuration"

@@ -73,6 +73,19 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/ipv6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/ipv6_label" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ipv6_desc"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/save"
             android:layout_width="match_parent"

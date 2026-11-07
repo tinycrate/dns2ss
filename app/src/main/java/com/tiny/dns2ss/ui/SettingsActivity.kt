@@ -32,12 +32,14 @@ class SettingsActivity : AppCompatActivity() {
         binding.ssUri.setText(state.ssUri)
         binding.dnsHost.setText(state.dnsHost)
         binding.dnsPort.setText(state.dnsPort.toString())
+        binding.ipv6.isChecked = state.ipv6Enabled
 
         binding.save.setOnClickListener {
             val error = viewModel.save(
                 binding.ssUri.text?.toString().orEmpty(),
                 binding.dnsHost.text?.toString().orEmpty(),
                 binding.dnsPort.text?.toString().orEmpty(),
+                binding.ipv6.isChecked,
             )
             if (error == null) {
                 Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show()

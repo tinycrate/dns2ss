@@ -84,6 +84,7 @@ class DnsVpnService : VpnService() {
     @Volatile private var routedDnsServers: List<String> = emptyList()
     @Volatile private var activeLogVerbosity: com.tiny.dns2ss.config.LogVerbosity =
         com.tiny.dns2ss.config.LogVerbosity.default
+    @Volatile private var activeIpv6Enabled: Boolean = true
     @Volatile private var startedAtMs: Long = 0
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var restartJob: Job? = null
@@ -129,6 +130,7 @@ class DnsVpnService : VpnService() {
             val config = prefs.loadValidated()
             currentMode = config.mode
             activeLogVerbosity = config.logVerbosity
+            activeIpv6Enabled = config.ipv6Enabled
             VpnLog.enabled = config.logVerbosity != com.tiny.dns2ss.config.LogVerbosity.OFF
             if (!VpnLog.enabled) VpnLog.clear()
             VpnStatus.set(VpnRunState.STARTING, currentMode, "Starting")
@@ -174,9 +176,13 @@ class DnsVpnService : VpnService() {
             router = localRouter
             if (abortIfStopped()) return
 
-            val routed = if (config.mode == VpnMode.FAST) underlyingDnsServers() else emptyList()
+            val routed = if (config.mode == VpnMode.FAST) {
+                underlyingDnsServers().filter { config.ipv6Enabled || it.address.size == 4 }
+            } else {
+                emptyList()
+            }
             routedDnsServers = routed.mapNotNull { it.hostAddress }
-            val established = establishTun(config.mode, routed)
+            val established = establishTun(config.mode, routed, config.ipv6Enabled)
             tun = established
             runCatching { setUnderlyingNetworks(null) }
             if (abortIfStopped()) return
@@ -215,16 +221,22 @@ class DnsVpnService : VpnService() {
         }
     }
 
-    private fun establishTun(mode: VpnMode, routedDns: List<java.net.InetAddress>): ParcelFileDescriptor {
+    private fun establishTun(
+        mode: VpnMode,
+        routedDns: List<java.net.InetAddress>,
+        ipv6Enabled: Boolean,
+    ): ParcelFileDescriptor {
         val builder = Builder()
             .setSession(getString(R.string.app_name))
             .setMtu(VPN_MTU)
             .setBlocking(false)
             .addAddress(TUN_V4, 32)
             .addDnsServer(DNS_V4)
-            .addAddress(TUN_V6, 128)
-            .addDnsServer(DNS_V6)
-            .setConfigureIntent(
+        if (ipv6Enabled) {
+            builder.addAddress(TUN_V6, 128)
+            builder.addDnsServer(DNS_V6)
+        }
+        builder.setConfigureIntent(
                 PendingIntent.getActivity(
                     this,
                     100,
@@ -235,7 +247,7 @@ class DnsVpnService : VpnService() {
 
         if (mode == VpnMode.FAST) {
             builder.addRoute(DNS_V4, 32)
-            builder.addRoute(DNS_V6, 128)
+            if (ipv6Enabled) builder.addRoute(DNS_V6, 128)
             // Android considers the VPN network non-default when it has no default route.
             // The system resolver therefore keeps using the underlying network's DNS
             // servers. Route those individual resolver IPs into the tunnel as well.
@@ -245,7 +257,7 @@ class DnsVpnService : VpnService() {
             }
         } else {
             builder.addRoute("0.0.0.0", 0)
-            builder.addRoute("::", 0)
+            if (ipv6Enabled) builder.addRoute("::", 0)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -309,6 +321,7 @@ class DnsVpnService : VpnService() {
         return AppDiagnostics(
             mode = currentMode,
             logVerbosity = activeLogVerbosity,
+            ipv6Enabled = activeIpv6Enabled,
             state = VpnStatus.data.value.state,
             routedDnsServers = routedDnsServers,
             cacheEntries = cache?.entries ?: 0,

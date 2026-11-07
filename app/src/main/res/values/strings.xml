@@ -7,6 +7,8 @@
     <string name="dns_target_label">Remote DNS target on the SS server</string>
     <string name="dns_host_hint">IP</string>
     <string name="dns_port_hint">Port</string>
+    <string name="ipv6_label">Enable IPv6</string>
+    <string name="ipv6_desc">Adds IPv6 DNS and routing to the VPN. Disable if your server or network has no IPv6. Applies after a VPN restart.</string>
     <string name="mode_label">Mode</string>
     <string name="mode_fast">Fast</string>
     <string name="mode_strict">Strict</string>
