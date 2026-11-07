@@ -70,6 +70,7 @@ class DnsVpnService : VpnService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateLock = Any()
+    private val tproxyLock = Any()
     private val starting = AtomicBoolean(false)
     private val stopping = AtomicBoolean(false)
 
@@ -78,6 +79,7 @@ class DnsVpnService : VpnService() {
     @Volatile private var sslocal: SsLocalProcess? = null
     @Volatile private var router: Socks5Router? = null
     @Volatile private var hevStarted = false
+    @Volatile private var tproxyTouched = false
     @Volatile private var tunnelPort: Int? = null
     @Volatile private var routedDnsServers: List<String> = emptyList()
     @Volatile private var activeLogVerbosity: com.tiny.dns2ss.config.LogVerbosity =
@@ -182,10 +184,16 @@ class DnsVpnService : VpnService() {
             val hevConfig = HevConfig(routerPort = routerPort, username = username, password = password)
             val hevFile = File(filesDir, "hev.yaml")
             hevFile.writeText(HevConfigBuilder.build(hevConfig))
-            if (!TProxyService.TProxyStartService(hevFile.absolutePath, established.fd)) {
-                throw IllegalStateException("hev-socks5-tunnel failed to start")
+            if (!startTproxy(hevFile.absolutePath, established.fd)) {
+                VpnLog.add("service", "hev start returned false; resetting native state and retrying")
+                stopTproxy()
+                delay(150)
+                if (!startTproxy(hevFile.absolutePath, established.fd)) {
+                    stopTproxy()
+                    VpnLog.add("service", "hev start failed after native-state reset")
+                    throw IllegalStateException("hev-socks5-tunnel failed to start")
+                }
             }
-            hevStarted = true
             if (abortIfStopped()) return
 
             VpnStatus.setActiveTunnelPort(chosenTunnelPort)
@@ -270,6 +278,21 @@ class DnsVpnService : VpnService() {
         } catch (t: Throwable) {
             VpnLog.add("service", "DNS discovery failed: ${t.message}")
             emptyList()
+        }
+    }
+
+    private fun startTproxy(path: String, fd: Int): Boolean = synchronized(tproxyLock) {
+        tproxyTouched = true
+        val started = TProxyService.TProxyStartService(path, fd)
+        if (started) hevStarted = true
+        started
+    }
+
+    private fun stopTproxy() = synchronized(tproxyLock) {
+        if (hevStarted || tproxyTouched) {
+            hevStarted = false
+            tproxyTouched = false
+            runCatching { TProxyService.TProxyStopService() }
         }
     }
 
@@ -428,10 +451,7 @@ class DnsVpnService : VpnService() {
             networkSignature = ""
             VpnStatus.setActiveTunnelPort(null)
             tunnelPort = null
-            if (hevStarted) {
-                hevStarted = false
-                runCatching { TProxyService.TProxyStopService() }
-            }
+            stopTproxy()
             val currentTun = tun
             tun = null
             runCatching { currentTun?.close() }
