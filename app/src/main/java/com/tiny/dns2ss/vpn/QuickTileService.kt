@@ -1,5 +1,6 @@
 package com.tiny.dns2ss.vpn
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
@@ -54,6 +55,7 @@ class QuickTileService : TileService() {
         DnsVpnService.start(this)
     }
 
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     private fun launchMain(firstRun: Boolean) {
         val intent = Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -107,7 +109,9 @@ class QuickTileService : TileService() {
             VpnRunState.STOPPED, VpnRunState.ERROR -> Tile.STATE_INACTIVE
         }
         tile.subtitle = stateText
-        tile.stateDescription = "$modeText, $stateText"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            tile.stateDescription = "$modeText, $stateText"
+        }
         tile.updateTile()
     }
 
