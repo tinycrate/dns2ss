@@ -6,6 +6,7 @@ import com.tiny.dns2ss.config.VpnMode
 data class AppDiagnostics(
     val mode: VpnMode = VpnMode.default,
     val logVerbosity: LogVerbosity = LogVerbosity.default,
+    val ipv6Enabled: Boolean = true,
     val state: VpnRunState = VpnRunState.STOPPED,
     val routedDnsServers: List<String> = emptyList(),
     val cacheEntries: Int = 0,

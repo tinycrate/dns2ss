@@ -32,6 +32,7 @@ class DiagnosticsViewModel(application: Application) : AndroidViewModel(applicat
             appendLine("State: ${status.state}")
             appendLine("Mode: ${status.mode}")
             appendLine("Log verbosity: ${diag.logVerbosity.label}")
+            appendLine("IPv6: ${if (diag.ipv6Enabled) "enabled" else "disabled"}")
             appendLine("Uptime: ${formatDuration(diag.uptimeMs)}")
             appendLine("DNS target: ${config?.dnsHost ?: prefs.dnsHost}:${config?.dnsPort ?: prefs.dnsPort}")
             appendLine("SS server: ${config?.ss?.serverAddress ?: "-"}")
@@ -67,9 +68,9 @@ class DiagnosticsViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun formatBytes(bytes: Long): String {
         if (bytes < 1024) return "$bytes B"
+        val units = arrayOf("B", "KB", "MB", "GB", "TB")
         var value = bytes.toDouble()
         var unit = 0
-        val units = arrayOf("KB", "MB", "GB", "TB")
         while (value >= 1024 && unit < units.lastIndex) {
             value /= 1024
             unit++

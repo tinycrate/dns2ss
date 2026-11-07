@@ -78,7 +78,7 @@ class DiagnosticsActivity : AppCompatActivity() {
     private fun applyLogWrap(wrap: Boolean) {
         // Two dedicated views avoid the nested-scroll measurement problem that
         // prevented a single TextView from re-wrapping reliably.
-        binding.logNoWrapHorizontal.visibility = if (wrap) View.GONE else View.VISIBLE
+        binding.logNoWrapVertical.visibility = if (wrap) View.GONE else View.VISIBLE
         binding.logWrapVertical.visibility = if (wrap) View.VISIBLE else View.GONE
     }
 
