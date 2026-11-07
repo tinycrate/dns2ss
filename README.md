@@ -6,7 +6,7 @@ A single-purpose Android app that sends DNS to a remote resolver behind a Shadow
 - Package: `com.tiny.dns2ss`
 - Android 10+ (`minSdk 29`)
 - `arm64-v8a` and `x86_64`
-- Debug-signed APK for sideloading
+- Debug-signed APK for sideloading/testing; release signing is documented separately
 
 ## Modes
 
@@ -119,8 +119,22 @@ The no-wrap log view scrolls vertically and horizontally; the **Wrap log lines**
 
 ## Testing
 
-- JVM tests cover URI parsing, config builders, and DNS cache TTL/ID/case behavior.
-- Environment-specific functional test notes are kept under `tests/`.
+From the repository root:
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :testclient:assembleDebug
+```
+
+The JVM suite currently has 20 tests covering URI parsing, SS/HEV config builders, DNS cache positive/negative TTL behavior, byte formatting, and SOCKS5 address/UDP parsing. Device and local-server tools are described in [docs/TESTING.md](docs/TESTING.md). Environment-specific test notes are kept under `tests/`.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — components, modes, DNS cache/tunnel, HEV lifecycle, network changes, threading.
+- [Testing](docs/TESTING.md) — unit tests, test client, test DNS server, phone checklist.
+- [Release](docs/RELEASE.md) — build variants, signing, compatibility, release checklist.
+- [Contributing](CONTRIBUTING.md) — commit discipline, style, security expectations.
+
+Repository layout: `app/` (Android app), `tools/testclient/` (separate test APK), `tools/testdns/` (JDK test DNS server), `tests/` (environment-specific notes), `scripts/` (vendored artifact helper), `third_party/` (licenses/checksums).
 
 ## Limitations
 
@@ -132,8 +146,8 @@ The no-wrap log view scrolls vertically and horizontally; the **Wrap log lines**
 - Apps that explicitly bind sockets to the underlying network bypass the VPN.
 - The SS server hostname is resolved by `sslocal` using the underlying network before/outside the tunnel; use an IP if that metadata leak matters.
 - No per-app mode, always-on/lockdown, or 32-bit ABIs.
-- The APK is debug-signed.
-- Physical-phone performance and Quick Settings tile validation remain outstanding.
+- The debug APK is debug-signed; a private release keystore is required for distribution.
+- Physical-phone behavior remains the final acceptance gate; use [docs/TESTING.md](docs/TESTING.md) for the checklist.
 
 ## Third-party components
 
