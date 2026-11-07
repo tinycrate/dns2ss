@@ -3,7 +3,6 @@
     <string name="app_name">dns2ss</string>
     <string name="app_subtitle">DNS to a remote resolver over Shadowsocks</string>
     <string name="ss_uri_label">Shadowsocks URI</string>
-    <string name="ss_uri_hint">ss://...</string>
     <string name="dns_target_label">Remote DNS target on the SS server</string>
     <string name="dns_host_hint">IP</string>
     <string name="dns_port_hint">Port</string>
@@ -22,18 +21,15 @@
     <string name="diagnostics">Diagnostics</string>
     <string name="save">Save</string>
     <string name="saved">Saved</string>
-    <string name="back">Back</string>
     <string name="status_stopped">Stopped</string>
     <string name="status_starting">Starting…</string>
     <string name="status_running">Running</string>
     <string name="status_stopping">Stopping…</string>
     <string name="status_error">Error</string>
     <string name="current_target">DNS: %1$s:%2$d</string>
-    <string name="config_missing">Configure the Shadowsocks URI and remote DNS target in Settings.</string>
     <string name="config_invalid">Check the configuration: %1$s</string>
     <string name="vpn_permission_missing">Grant VPN permission by pressing Start once.</string>
     <string name="tile_added">Quick Settings tile added.</string>
-    <string name="tile_already">Quick Settings tile is already present.</string>
     <string name="tile_unsupported">Quick Settings tiles are not supported on this device; add it manually.</string>
     <string name="tile_failed">Could not add the tile. Add it manually in Quick Settings.</string>
     <string name="add_tile">Add Quick Settings tile</string>
@@ -50,17 +46,8 @@
     <string name="select_text">Select</string>
     <string name="clear">Clear</string>
     <string name="copied">Copied</string>
-    <string name="routed_dns">Routed DNS servers (Fast mode): %1$s</string>
-    <string name="cache_summary">DNS cache: %1$d entries, %2$d hits, %3$d misses</string>
-    <string name="dns_summary">DNS: %1$d queries, %2$d responses, %3$d pending</string>
-    <string name="traffic_summary">Traffic: tunnel %1$d B, direct %2$d B, full %3$d B, errors %4$d</string>
-    <string name="uptime_summary">Uptime: %1$s</string>
-    <string name="private_dns_summary">Private DNS: %1$s</string>
     <string name="settings_title">Settings</string>
     <string name="diagnostics_title">Diagnostics</string>
-    <string name="test_dns">Test DNS</string>
-    <string name="test_dns_requires_running">Start the VPN first.</string>
     <string name="about_note">dns2ss is fail-closed: if the SS tunnel or remote DNS is unavailable, DNS fails instead of leaking to the local resolver.</string>
-    <string name="tile_first_run">Configure dns2ss and press Start once; the Quick Settings tile will then control it.</string>
     <string name="tile_starting">Starting from tile…</string>
 </resources>

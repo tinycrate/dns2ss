@@ -80,7 +80,6 @@ class DnsVpnService : VpnService() {
     @Volatile private var router: Socks5Router? = null
     @Volatile private var hevStarted = false
     @Volatile private var tproxyTouched = false
-    @Volatile private var tunnelPort: Int? = null
     @Volatile private var routedDnsServers: List<String> = emptyList()
     @Volatile private var activeLogVerbosity: com.tiny.dns2ss.config.LogVerbosity =
         com.tiny.dns2ss.config.LogVerbosity.default
@@ -139,7 +138,6 @@ class DnsVpnService : VpnService() {
 
             val chosenTunnelPort = FreePort.forTcpAndUdp()
             val chosenSocksPort = if (config.mode == VpnMode.FULL) FreePort.forTcpAndUdp() else null
-            tunnelPort = chosenTunnelPort
 
             val process = SsLocalProcess(
                 this,
@@ -202,7 +200,6 @@ class DnsVpnService : VpnService() {
             }
             if (abortIfStopped()) return
 
-            VpnStatus.setActiveTunnelPort(chosenTunnelPort)
             VpnStatus.set(VpnRunState.RUNNING, config.mode, "Running")
             startedAtMs = System.currentTimeMillis()
             DiagnosticsProvider.provider = { buildDiagnostics() }
@@ -462,8 +459,6 @@ class DnsVpnService : VpnService() {
             startedAtMs = 0
             routedDnsServers = emptyList()
             networkSignature = ""
-            VpnStatus.setActiveTunnelPort(null)
-            tunnelPort = null
             stopTproxy()
             val currentTun = tun
             tun = null

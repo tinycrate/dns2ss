@@ -46,10 +46,6 @@ class RouterStats {
     val errors = AtomicLong()
     val cacheHits = AtomicLong()
     val cacheMisses = AtomicLong()
-
-    fun logLine(): String =
-        "dns=${dnsQueries.get()}/${dnsResponses.get()} cache=${cacheHits.get()}/${cacheMisses.get()} " +
-            "direct=${directBytes.get()}B tunnel=${tunnelBytes.get()}B full=${fullBytes.get()}B errors=${errors.get()}"
 }
 
 /**
