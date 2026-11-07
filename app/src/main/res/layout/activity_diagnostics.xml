@@ -19,13 +19,22 @@
             android:text="@string/diagnostics_title"
             android:textAppearance="?attr/textAppearanceHeadlineMedium" />
 
-        <TextView
-            android:id="@+id/summary"
+        <HorizontalScrollView
+            android:id="@+id/summaryHorizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:fontFamily="monospace"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+            android:fillViewport="true"
+            android:scrollbars="horizontal">
+
+            <TextView
+                android:id="@+id/summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:scrollHorizontally="true"
+                android:textAppearance="?attr/textAppearanceBodySmall" />
+        </HorizontalScrollView>
 
         <TextView
             android:layout_width="match_parent"
@@ -84,24 +93,49 @@
             android:layout_marginTop="8dp"
             android:text="@string/wrap_log_lines" />
 
-        <HorizontalScrollView
-            android:id="@+id/logHorizontal"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="360dp"
-            android:layout_marginTop="4dp"
-            android:fillViewport="true"
-            android:scrollbars="horizontal">
+            android:layout_marginTop="4dp">
 
-            <ScrollView
-                android:id="@+id/logVertical"
-                android:layout_width="wrap_content"
+            <HorizontalScrollView
+                android:id="@+id/logNoWrapHorizontal"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:fillViewport="true"
-                android:scrollbars="vertical">
+                android:scrollbars="horizontal">
+
+                <ScrollView
+                    android:id="@+id/logNoWrapVertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true"
+                    android:scrollbars="vertical">
+
+                    <TextView
+                        android:id="@+id/logsNoWrap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:gravity="top|start"
+                        android:padding="12dp"
+                        android:scrollHorizontally="true"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textIsSelectable="true" />
+                </ScrollView>
+            </HorizontalScrollView>
+
+            <ScrollView
+                android:id="@+id/logWrapVertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="vertical"
+                android:visibility="gone">
 
                 <TextView
-                    android:id="@+id/logs"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/logsWrap"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
                     android:gravity="top|start"
@@ -109,6 +143,6 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textIsSelectable="true" />
             </ScrollView>
-        </HorizontalScrollView>
+        </FrameLayout>
     </LinearLayout>
 </ScrollView>

@@ -80,6 +80,8 @@ class DnsVpnService : VpnService() {
     @Volatile private var hevStarted = false
     @Volatile private var tunnelPort: Int? = null
     @Volatile private var routedDnsServers: List<String> = emptyList()
+    @Volatile private var activeLogVerbosity: com.tiny.dns2ss.config.LogVerbosity =
+        com.tiny.dns2ss.config.LogVerbosity.default
     @Volatile private var startedAtMs: Long = 0
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var restartJob: Job? = null
@@ -124,6 +126,7 @@ class DnsVpnService : VpnService() {
             val prefs = AppPreferences(this)
             val config = prefs.loadValidated()
             currentMode = config.mode
+            activeLogVerbosity = config.logVerbosity
             VpnLog.enabled = config.logVerbosity != com.tiny.dns2ss.config.LogVerbosity.OFF
             if (!VpnLog.enabled) VpnLog.clear()
             VpnStatus.set(VpnRunState.STARTING, currentMode, "Starting")
@@ -282,6 +285,7 @@ class DnsVpnService : VpnService() {
         val cache = runCatching { currentRouter?.cacheStats() }.getOrNull()
         return AppDiagnostics(
             mode = currentMode,
+            logVerbosity = activeLogVerbosity,
             state = VpnStatus.data.value.state,
             routedDnsServers = routedDnsServers,
             cacheEntries = cache?.entries ?: 0,

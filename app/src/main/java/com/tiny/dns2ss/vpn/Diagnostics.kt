@@ -1,9 +1,11 @@
 package com.tiny.dns2ss.vpn
 
+import com.tiny.dns2ss.config.LogVerbosity
 import com.tiny.dns2ss.config.VpnMode
 
 data class AppDiagnostics(
     val mode: VpnMode = VpnMode.default,
+    val logVerbosity: LogVerbosity = LogVerbosity.default,
     val state: VpnRunState = VpnRunState.STOPPED,
     val routedDnsServers: List<String> = emptyList(),
     val cacheEntries: Int = 0,

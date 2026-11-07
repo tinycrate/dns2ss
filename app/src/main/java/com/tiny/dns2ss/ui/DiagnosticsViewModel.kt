@@ -31,6 +31,7 @@ class DiagnosticsViewModel(application: Application) : AndroidViewModel(applicat
         val summary = buildString {
             appendLine("State: ${status.state}")
             appendLine("Mode: ${status.mode}")
+            appendLine("Log verbosity: ${diag.logVerbosity.label}")
             appendLine("Uptime: ${formatDuration(diag.uptimeMs)}")
             appendLine("DNS target: ${config?.dnsHost ?: prefs.dnsHost}:${config?.dnsPort ?: prefs.dnsPort}")
             appendLine("SS server: ${config?.ss?.serverAddress ?: "-"}")

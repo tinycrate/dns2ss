@@ -3,7 +3,7 @@ package com.tiny.dns2ss.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
-import android.view.ViewGroup
+import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -59,7 +59,7 @@ class DiagnosticsActivity : AppCompatActivity() {
         binding.refresh.setOnClickListener { refresh() }
         binding.copy.setOnClickListener {
             val clipboard = getSystemService(ClipboardManager::class.java)
-            clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.logs), binding.logs.text))
+            clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.logs), activeLogText()))
             Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
         }
         binding.clear.setOnClickListener {
@@ -69,22 +69,28 @@ class DiagnosticsActivity : AppCompatActivity() {
         refresh()
     }
 
-    private fun applyLogWrap(wrap: Boolean) {
-        binding.logs.setHorizontallyScrolling(!wrap)
-        binding.logs.layoutParams = binding.logs.layoutParams.apply {
-            width = if (wrap) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
-        }
-        binding.logVertical.layoutParams = binding.logVertical.layoutParams.apply {
-            width = if (wrap) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
-        }
-        binding.logs.requestLayout()
-        binding.logVertical.requestLayout()
+    override fun onResume() {
+        super.onResume()
+        // Pick up logs/state after returning from a VPN restart.
+        refresh()
     }
+
+    private fun applyLogWrap(wrap: Boolean) {
+        // Two dedicated views avoid the nested-scroll measurement problem that
+        // prevented a single TextView from re-wrapping reliably.
+        binding.logNoWrapHorizontal.visibility = if (wrap) View.GONE else View.VISIBLE
+        binding.logWrapVertical.visibility = if (wrap) View.VISIBLE else View.GONE
+    }
+
+    private fun activeLogText(): CharSequence =
+        if (binding.logWrap.isChecked) binding.logsWrap.text else binding.logsNoWrap.text
 
     private fun refresh() {
         val state = viewModel.snapshot()
         binding.summary.text = state.summary
-        binding.logs.text = state.logs.ifBlank { "-" }
+        val logText = state.logs.ifBlank { "-" }
+        binding.logsNoWrap.text = logText
+        binding.logsWrap.text = logText
         verbosityTouched = false
         binding.logVerbosity.setSelection(LogVerbosity.entries.indexOf(state.verbosity).coerceAtLeast(0))
     }

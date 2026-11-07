@@ -5,8 +5,8 @@
     <string name="ss_uri_label">Shadowsocks URI</string>
     <string name="ss_uri_hint">ss://...</string>
     <string name="dns_target_label">Remote DNS target on the SS server</string>
-    <string name="dns_host_hint">127.0.0.1</string>
-    <string name="dns_port_hint">53530</string>
+    <string name="dns_host_hint">IP</string>
+    <string name="dns_port_hint">Port</string>
     <string name="mode_label">Mode</string>
     <string name="mode_fast">Fast</string>
     <string name="mode_strict">Strict</string>
