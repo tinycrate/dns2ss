@@ -3,13 +3,9 @@ package com.tiny.dns2ss.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
-import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +13,7 @@ import androidx.core.view.WindowCompat
 import com.tiny.dns2ss.R
 import com.tiny.dns2ss.config.LogVerbosity
 import com.tiny.dns2ss.databinding.ActivityDiagnosticsBinding
+import com.tiny.dns2ss.databinding.DialogLogBinding
 import com.tiny.dns2ss.ui.applySystemBarInsets
 
 class DiagnosticsActivity : AppCompatActivity() {
@@ -90,34 +87,24 @@ class DiagnosticsActivity : AppCompatActivity() {
      * has its own built-in scrolling and selection behavior.
      */
     private fun showSelectionDialog() {
-        val editor = EditText(this).apply {
-            setText(activeLogText())
-            setTextIsSelectable(true)
-            setSingleLine(false)
-            inputType = InputType.TYPE_NULL
-            isFocusable = true
-            isFocusableInTouchMode = true
-            isCursorVisible = false
-            showSoftInputOnFocus = false
-            setPadding(24, 24, 24, 24)
-            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall)
-        }
-        val height = (resources.displayMetrics.heightPixels * 0.62f).toInt()
-        val container = FrameLayout(this).apply {
-            addView(
-                editor,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    height,
-                ),
+        val content = DialogLogBinding.inflate(layoutInflater)
+        content.logEditor.setText(activeLogText())
+        content.logEditor.showSoftInputOnFocus = false
+        content.logEditor.setSelection(0)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.logs)
+            .setView(content.root)
+            .setPositiveButton(R.string.copy) { _, _ -> copyLog(content.logEditor.text) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+        dialog.setOnShowListener {
+            val metrics = resources.displayMetrics
+            dialog.window?.setLayout(
+                (metrics.widthPixels * 0.92f).toInt(),
+                (metrics.heightPixels * 0.80f).toInt(),
             )
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.logs)
-            .setView(container)
-            .setPositiveButton(R.string.copy) { _, _ -> copyLog(editor.text) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        dialog.show()
     }
 
     override fun onResume() {
