@@ -18,6 +18,7 @@ import com.tiny.dns2ss.ui.applySystemBarInsets
 class DiagnosticsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDiagnosticsBinding
     private val viewModel: DiagnosticsViewModel by viewModels()
+    private var verbosityTouched = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,15 +32,27 @@ class DiagnosticsActivity : AppCompatActivity() {
             android.R.layout.simple_spinner_dropdown_item,
             LogVerbosity.entries.map { it.label },
         )
-        // onItemClick fires for a user selection from the dropdown, not for the
-        // programmatic setSelection performed when this page is refreshed.
-        binding.logVerbosity.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-            val selected = LogVerbosity.entries[position]
-            if (selected != viewModel.currentVerbosity()) {
+        // Spinner forbids setOnItemClickListener. Use the selection callback but
+        // gate it with a touch flag so programmatic setSelection during refresh
+        // does not show the restart note.
+        binding.logVerbosity.setOnTouchListener { _, _ ->
+            verbosityTouched = true
+            false
+        }
+        binding.logVerbosity.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                if (!verbosityTouched) return
+                verbosityTouched = false
+                val selected = LogVerbosity.entries[position]
+                if (selected == viewModel.currentVerbosity()) return
                 viewModel.setLogVerbosity(selected)
                 Toast.makeText(this@DiagnosticsActivity, R.string.log_restart_note, Toast.LENGTH_SHORT).show()
             }
-        }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                verbosityTouched = false
+            }
+        })
 
         binding.logWrap.setOnCheckedChangeListener { _, checked -> applyLogWrap(checked) }
         applyLogWrap(false)
@@ -72,6 +85,7 @@ class DiagnosticsActivity : AppCompatActivity() {
         val state = viewModel.snapshot()
         binding.summary.text = state.summary
         binding.logs.text = state.logs.ifBlank { "-" }
+        verbosityTouched = false
         binding.logVerbosity.setSelection(LogVerbosity.entries.indexOf(state.verbosity).coerceAtLeast(0))
     }
 }
