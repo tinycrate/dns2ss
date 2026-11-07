@@ -7,7 +7,8 @@ data class SslocalConfig(
     val socksPort: Int?,
     val dnsHost: String,
     val dnsPort: Int,
-    val logLevel: Int = 1,
+    val logLevel: Int = 0,
+    val rustLog: String = "warn",
 )
 
 object SslocalConfigBuilder {

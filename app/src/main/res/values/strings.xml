@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">dns2ss</string>
-    <string name="app_subtitle">DNS to Pi-hole over Shadowsocks</string>
+    <string name="app_subtitle">DNS to a remote resolver over Shadowsocks</string>
     <string name="ss_uri_label">Shadowsocks URI</string>
     <string name="ss_uri_hint">ss://...</string>
-    <string name="dns_target_label">Pi-hole target on the SS server</string>
+    <string name="dns_target_label">Remote DNS target on the SS server</string>
     <string name="dns_host_hint">127.0.0.1</string>
     <string name="dns_port_hint">53530</string>
     <string name="mode_label">Mode</string>
     <string name="mode_fast">Fast</string>
     <string name="mode_strict">Strict</string>
     <string name="mode_full">Full</string>
-    <string name="mode_fast_desc">Only the system resolver goes to Pi-hole. All other traffic uses the native network path. Hardcoded plain DNS bypasses.</string>
-    <string name="mode_strict_desc">Every TCP/UDP port-53 query goes to Pi-hole. All other traffic stays direct through a userspace forwarder.</string>
-    <string name="mode_full_desc">All app traffic goes through Shadowsocks. DNS still goes to Pi-hole over SS. Slowest mode.</string>
+    <string name="mode_fast_desc">Only the system resolver goes to the remote DNS. All other traffic uses the native network path. Hardcoded plain DNS bypasses.</string>
+    <string name="mode_strict_desc">Every TCP/UDP port-53 query goes to the remote DNS. All other traffic stays direct through a userspace forwarder.</string>
+    <string name="mode_full_desc">All app traffic goes through Shadowsocks. DNS still goes to the remote DNS over SS. Slowest mode.</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
     <string name="settings">Settings</string>
@@ -26,8 +26,8 @@
     <string name="status_running">Running</string>
     <string name="status_stopping">Stopping…</string>
     <string name="status_error">Error</string>
-    <string name="current_target">Pi-hole: %1$s:%2$d</string>
-    <string name="config_missing">Configure the Shadowsocks URI and Pi-hole target in Settings.</string>
+    <string name="current_target">DNS: %1$s:%2$d</string>
+    <string name="config_missing">Configure the Shadowsocks URI and remote DNS target in Settings.</string>
     <string name="config_invalid">Check the configuration: %1$s</string>
     <string name="vpn_permission_missing">Grant VPN permission by pressing Start once.</string>
     <string name="tile_added">Quick Settings tile added.</string>
@@ -37,9 +37,10 @@
     <string name="add_tile">Add Quick Settings tile</string>
     <string name="open_private_dns">Open Private DNS settings</string>
     <string name="private_dns_warning">Private DNS uses port 853 and can bypass dns2ss. Turn it off while using dns2ss.</string>
-    <string name="doh_warning">DoH (port 443) can bypass dns2ss. Disable browser secure DNS and block DoH hostnames in Pi-hole.</string>
+    <string name="doh_warning">DoH (port 443) can bypass dns2ss. Disable browser secure DNS and block DoH hostnames in the remote DNS blocklist.</string>
     <string name="network_change_note">Network changes automatically restart the VPN. If DNS still fails after switching networks, stop and start once.</string>
     <string name="logs">Logs</string>
+    <string name="wrap_log_lines">Wrap log lines</string>
     <string name="log_verbosity">Log verbosity</string>
     <string name="log_restart_note">Logging changes apply after the VPN is restarted.</string>
     <string name="refresh">Refresh</string>
@@ -56,7 +57,7 @@
     <string name="diagnostics_title">Diagnostics</string>
     <string name="test_dns">Test DNS</string>
     <string name="test_dns_requires_running">Start the VPN first.</string>
-    <string name="about_note">dns2ss is fail-closed: if the SS tunnel or Pi-hole is unavailable, DNS fails instead of leaking to the local resolver.</string>
+    <string name="about_note">dns2ss is fail-closed: if the SS tunnel or remote DNS is unavailable, DNS fails instead of leaking to the local resolver.</string>
     <string name="tile_first_run">Configure dns2ss and press Start once; the Quick Settings tile will then control it.</string>
     <string name="tile_starting">Starting from tile…</string>
 </resources>

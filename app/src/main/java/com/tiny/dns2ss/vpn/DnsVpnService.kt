@@ -124,6 +124,8 @@ class DnsVpnService : VpnService() {
             val prefs = AppPreferences(this)
             val config = prefs.loadValidated()
             currentMode = config.mode
+            VpnLog.enabled = config.logVerbosity != com.tiny.dns2ss.config.LogVerbosity.OFF
+            if (!VpnLog.enabled) VpnLog.clear()
             VpnStatus.set(VpnRunState.STARTING, currentMode, "Starting")
             VpnLog.add("service", "starting mode=${config.mode}")
             updateNotification("Starting…")
@@ -141,7 +143,8 @@ class DnsVpnService : VpnService() {
                     socksPort = chosenSocksPort,
                     dnsHost = config.dnsHost,
                     dnsPort = config.dnsPort,
-                    logLevel = config.logVerbosity.sslocalLevel,
+                    logLevel = 0,
+                    rustLog = config.logVerbosity.rustLog,
                 ),
             ) { message -> onSsLocalExit(message) }
             process.start()

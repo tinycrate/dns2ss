@@ -42,6 +42,9 @@ class SsLocalProcess(
         builder.directory(context.filesDir)
         builder.redirectErrorStream(true)
         builder.environment()["LD_LIBRARY_PATH"] = context.applicationInfo.nativeLibraryDir
+        // sslocal's JSON log level only distinguishes Info/Debug/Trace. Use the
+        // tracing environment filter to get real Warn/Error/Off behavior.
+        builder.environment()["RUST_LOG"] = config.rustLog
 
         val started = builder.start()
         process = started

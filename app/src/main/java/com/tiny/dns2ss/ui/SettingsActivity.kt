@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.tiny.dns2ss.R
 import com.tiny.dns2ss.databinding.ActivitySettingsBinding
 import com.tiny.dns2ss.vpn.QuickTileService
@@ -22,8 +23,10 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.root.applySystemBarInsets()
 
         val state = viewModel.load()
         binding.ssUri.setText(state.ssUri)

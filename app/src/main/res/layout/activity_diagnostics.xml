@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
@@ -74,15 +77,38 @@
                 android:text="@string/clear" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/logs"
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/logWrap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/wrap_log_lines" />
+
+        <HorizontalScrollView
+            android:id="@+id/logHorizontal"
             android:layout_width="match_parent"
             android:layout_height="360dp"
-            android:layout_marginTop="8dp"
-            android:fontFamily="monospace"
-            android:gravity="top|start"
-            android:padding="12dp"
-            android:scrollbars="vertical"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+            android:layout_marginTop="4dp"
+            android:fillViewport="true"
+            android:scrollbars="horizontal">
+
+            <ScrollView
+                android:id="@+id/logVertical"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="vertical">
+
+                <TextView
+                    android:id="@+id/logs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:gravity="top|start"
+                    android:padding="12dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textIsSelectable="true" />
+            </ScrollView>
+        </HorizontalScrollView>
     </LinearLayout>
 </ScrollView>

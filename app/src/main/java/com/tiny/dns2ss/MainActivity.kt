@@ -11,12 +11,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.tiny.dns2ss.config.VpnMode
 import com.tiny.dns2ss.databinding.ActivityMainBinding
 import com.tiny.dns2ss.ui.DiagnosticsActivity
 import com.tiny.dns2ss.ui.MainViewModel
 import com.tiny.dns2ss.ui.SettingsActivity
+import com.tiny.dns2ss.ui.applySystemBarInsets
 import com.tiny.dns2ss.vpn.DnsVpnService
 import com.tiny.dns2ss.vpn.VpnRunState
 import com.tiny.dns2ss.vpn.VpnStatus
@@ -44,8 +46,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.root.applySystemBarInsets()
 
         binding.modeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked || suppressModeCallback) return@addOnButtonCheckedListener

@@ -2,13 +2,13 @@ package com.tiny.dns2ss.config
 
 enum class LogVerbosity(
     val label: String,
-    val sslocalLevel: Int,
+    val rustLog: String,
 ) {
-    OFF("Off", 5),
-    ERROR("Errors", 4),
-    WARN("Warnings", 3),
-    INFO("Info", 2),
-    DEBUG("Debug", 1);
+    OFF("Off", "off"),
+    ERROR("Errors", "error"),
+    WARN("Warnings", "warn"),
+    INFO("Info", "info"),
+    DEBUG("Debug", "debug");
 
     companion object {
         val default: LogVerbosity = WARN

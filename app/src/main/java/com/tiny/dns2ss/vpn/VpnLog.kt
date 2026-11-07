@@ -4,8 +4,12 @@ object VpnLog {
     private const val MAX_LINES = 250
     private val lines = ArrayDeque<String>(MAX_LINES)
 
+    @Volatile
+    var enabled: Boolean = true
+
     @Synchronized
     fun add(tag: String, message: String) {
+        if (!enabled) return
         val clean = message.replace('\n', ' ').replace('\r', ' ').trim()
         if (clean.isEmpty()) return
         lines.addLast("$tag: $clean")
