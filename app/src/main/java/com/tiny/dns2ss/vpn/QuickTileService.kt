@@ -75,7 +75,7 @@ class QuickTileService : TileService() {
     private fun optimistic(state: Int, subtitle: String) {
         val tile = qsTile ?: return
         tile.state = state
-        tile.label = getString(R.string.app_name)
+        tile.label = "${modeLabel(selectedMode())} ${getString(R.string.app_name)}"
         tile.subtitle = subtitle
         tile.updateTile()
     }
@@ -84,22 +84,36 @@ class QuickTileService : TileService() {
         val tile = qsTile ?: return
         val status = VpnStatus.data.value
         val state = status.state
-        tile.label = getString(R.string.app_name)
+        val mode = if (state == VpnRunState.STOPPED || state == VpnRunState.ERROR) {
+            selectedMode()
+        } else {
+            status.mode
+        }
+        val modeText = modeLabel(mode)
+        val stateText = when (state) {
+            VpnRunState.RUNNING -> "Running"
+            VpnRunState.STARTING -> "Starting…"
+            VpnRunState.STOPPING -> "Stopping…"
+            VpnRunState.ERROR -> "Error"
+            VpnRunState.STOPPED -> "Off"
+        }
+        // Some launchers do not render Tile.subtitle; keep the mode in the label
+        // so it is always visible.
+        tile.label = "$modeText ${getString(R.string.app_name)}"
         tile.icon = Icon.createWithResource(this, R.drawable.ic_tile)
         tile.state = when (state) {
             VpnRunState.RUNNING, VpnRunState.STARTING -> Tile.STATE_ACTIVE
             VpnRunState.STOPPING -> Tile.STATE_UNAVAILABLE
             VpnRunState.STOPPED, VpnRunState.ERROR -> Tile.STATE_INACTIVE
         }
-        val modeLabel = status.mode.name.lowercase().replaceFirstChar { it.uppercase() }
-        tile.subtitle = when (state) {
-            VpnRunState.RUNNING -> modeLabel
-            VpnRunState.STARTING -> "Starting…"
-            VpnRunState.STOPPING -> "Stopping…"
-            VpnRunState.ERROR -> "Error"
-            VpnRunState.STOPPED -> modeLabel
-        }
-        tile.stateDescription = tile.subtitle
+        tile.subtitle = stateText
+        tile.stateDescription = "$modeText, $stateText"
         tile.updateTile()
     }
+
+    private fun selectedMode(): com.tiny.dns2ss.config.VpnMode =
+        runCatching { AppPreferences(this).mode }.getOrDefault(VpnStatus.data.value.mode)
+
+    private fun modeLabel(mode: com.tiny.dns2ss.config.VpnMode): String =
+        mode.name.lowercase().replaceFirstChar { it.uppercase() }
 }
