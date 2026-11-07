@@ -1,0 +1,20 @@
+Vendored artifacts (SHA-256)
+
+hev-socks5-tunnel 2.19.3 (from https://github.com/heiher/hev-socks5-tunnel/releases/download/2.19.3/hev-socks5-tunnel.aar)
+AB6C581E6157680CFE5687EE7BBDCF95405C006C2DB3701879EC44B9E5F83836  app/libs/hev-socks5-tunnel.aar
+
+shadowsocks-rust v1.25.0 Android binaries
+aarch64 source archive:
+DF93DA8E63FC4B0AEE1457E7C7C5431F0A5AE2FA305D579153DC075F086E5278  shadowsocks-v1.25.0.aarch64-linux-android.tar.xz
+x86_64 source archive:
+C0C82F088356AF640833C83EF4B80A4E26DA63B01C68D94A33BF9E515452BDBC  shadowsocks-v1.25.0.x86_64-linux-android.tar.xz
+
+Extracted sslocal binaries:
+AEF9FEC154C3103D04968258AF280E307EB33A0108ADB0DD601DFF2360B3A286  app/src/main/jniLibs/arm64-v8a/libsslocal.so
+6BE6202AB7243184491A08F9CF2CC17EE68CF7E299978EABC42743574E3517D2  app/src/main/jniLibs/x86_64/libsslocal.so
+
+dns2ss 1.1.0 debug APK:
+DD4D4ABCA4BC18CFCE0668DC578AC06C0D36E17C41BF8ECAD7885EC5EBDB6EE8  app/build/outputs/apk/debug/app-debug.apk
+
+dns2ss test client debug APK:
+24C7F455A185D7B40E65BAC0126FDD9DA0089F35D8D1448F17D05207FE3C48BD  tools/testclient/build/outputs/apk/debug/testclient-debug.apk
