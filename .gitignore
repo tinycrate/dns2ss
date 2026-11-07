@@ -1,3 +1,4 @@
+# Gradle / Android
 .gradle/
 .kotlin/
 **/build/
@@ -7,16 +8,17 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Build artifacts
 *.apk
+*.aab
 *.log
+*.hprof
+
+# Vendored downloads and local binaries used only for manual testing
 /third_party/downloads/
 /third_party/test/
-/w*.xml
-/window*.xml
-/mode*.xml
-/f*.xml
-/s*.xml
-/x*.xml
-/stop*.xml
-/tile.xml
-/test-*.xml
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
