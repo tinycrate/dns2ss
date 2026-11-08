@@ -26,6 +26,33 @@ Unit coverage currently includes:
 - byte-unit formatting;
 - SOCKS5 address/IPv4/IPv6/domain/UDP/fragment handling.
 
+## Physical-device benchmark
+
+`BenchActivity` (in the test-client APK) measures, with a fresh socket per DNS query:
+
+- 12 common domains, 1 cold + 3 warm queries each, shuffled per run;
+- cold/warm raw DNS to the **active network's resolver** (the virtual `198.18.0.2` while dns2ss is running);
+- TCP connect to `1.1.1.1:443`;
+- UDP NTP to a public server;
+- Android system DNS;
+- configurable HTTPS downloads from `speed.cloudflare.com`.
+
+Run it under each mode or under another VPN. The HTTP size defaults to
+5 MB; the example uses three 50 MB transfers for a stable throughput sample:
+
+```powershell
+adb shell am force-stop com.tiny.dns2ss.testclient
+adb shell am start -n com.tiny.dns2ss.testclient/.BenchActivity --ei bytes 50000000 --ei httpRuns 3
+adb logcat -s Bench:I
+```
+
+Repeat the whole benchmark two or three times and use the median. For CPU,
+sum `/proc/<pid>/stat` utime+stime across every process in the VPN package
+UID (including proxy children), subtract a 5 s idle baseline, and divide by
+the benchmark wall time.
+
+The DNS target is intentionally not hardcoded to `1.1.1.1`. In Fast mode, raw DNS to an arbitrary public resolver bypasses the TUN by design; only system-DNS/underlying-resolver traffic is routed. Using `LinkProperties.dnsServers` tests the actual Fast path.
+
 ## Device test client
 
 Install:
