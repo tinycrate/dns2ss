@@ -17,4 +17,4 @@ dns2ss 1.3.2 debug APK:
 7F4A7720ACE731A7C6E43D0C1B8282EACAB3D387D378513737322E25CD5F04CA  app/build/outputs/apk/debug/app-debug.apk
 
 dns2ss test client debug APK:
-2485117CCAD88198B20FB81F38E6944AAE22143B73CC456C9BB8991B9A2FB2A6  tools/testclient/build/outputs/apk/debug/testclient-debug.apk
+5BE1ECA39307143C8C6E7CCCA1257FE6F4C137A37324CA785225F784334A9D9D  tools/testclient/build/outputs/apk/debug/testclient-debug.apk

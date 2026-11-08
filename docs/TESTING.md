@@ -53,6 +53,23 @@ the benchmark wall time.
 
 The DNS target is intentionally not hardcoded to `1.1.1.1`. In Fast mode, raw DNS to an arbitrary public resolver bypasses the TUN by design; only system-DNS/underlying-resolver traffic is routed. Using `LinkProperties.dnsServers` tests the actual Fast path.
 
+## Battery workload
+
+`BatteryLoadActivity` runs a light screen-off/on workload for charge-counter
+tests. It holds a partial wake lock, attempts a unique system-resolver DNS
+name every second, and downloads 1 MB every 30 s:
+
+```powershell
+adb shell am start -n com.tiny.dns2ss.testclient/.BatteryLoadActivity
+adb logcat -s BatteryLoad:I
+```
+
+Use one path per session, reset `batterystats` before the session, and record
+`Charge counter`, voltage, temperature, and level before/after. Screen-off
+Sony/Android 11 devices may freeze non-foreground workloads; a foreground
+activity with `FLAG_KEEP_SCREEN_ON` and Doze disabled is more reproducible.
+Repeat each path at least twice for old batteries.
+
 ## Device test client
 
 Install:
