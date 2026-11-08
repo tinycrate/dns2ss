@@ -13,13 +13,42 @@ Debug APK (sideload/test):
 # app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Release build is currently unsigned:
+Release builds are R8-minified with resource shrinking. Use the release
+pipeline for the signed artifact:
 
 ```powershell
-.\gradlew.bat :app:assembleRelease
+.\scripts\build-release.cmd
 ```
 
-Before publishing, add a private release signing config (keystore, alias, and passwords) outside the repository. Do not commit a keystore or passwords.
+It runs unit tests/lint, builds and zipaligns the release APK, then invokes
+`apksigner`. In local mode it pauses and prompts for the **keystore
+password** (and key password if different). The keystore must stay outside
+the repository.
+
+Defaults:
+
+- keystore: `..\dns2ss-release.jks` relative to the repo;
+- alias: `dns2ss`;
+- output: `dist/dns2ss-<version>-release.apk`;
+- mapping: `dist/mapping-<version>.txt`.
+
+Use `-Keystore` and `-Alias` if your key differs; use `-NoSign` to only
+build/test/zipalign.
+
+### CI/CD mode
+
+Set secrets in the CI environment and pass `-Ci`; no prompt is used:
+
+```powershell
+$env:DNS2SS_KEYSTORE_PATH = "D:\secrets\dns2ss-release.jks"
+$env:DNS2SS_KEYSTORE_PASSWORD = "<from CI secret>"
+$env:DNS2SS_KEY_PASSWORD = "<from CI secret>"
+.\scripts\build-release.cmd -Ci
+```
+
+The script uses `DNS2SS_KEYSTORE_PASSWORD`/`DNS2SS_KEY_PASSWORD` via
+`apksigner` environment arguments, so secrets do not appear in its command
+line. Archive the R8 `mapping.txt` with every release.
 
 ## Compatibility
 
@@ -31,13 +60,13 @@ Before publishing, add a private release signing config (keystore, alias, and pa
 ## Store/signing checklist
 
 - [ ] create a private release keystore;
-- [ ] configure release signing locally;
+- [ ] run `.\scripts\build-release.cmd`, or `-Ci` with CI secrets;
 - [ ] set an immutable applicationId (`com.tiny.dns2ss` is already set);
 - [ ] increment versionCode/versionName;
-- [ ] run `:app:testDebugUnitTest` and a full phone regression;
+- [ ] run a full phone regression on the signed R8 APK;
 - [ ] verify the APK with `apksigner verify --print-certs`;
-- [ ] update `third_party/CHECKSUMS.txt`;
-- [ ] archive a source tag and signed APK.
+- [ ] archive the signed APK, SHA-256, and R8 mapping.txt;
+- [ ] archive a source tag.
 
 ## Debug build note
 
