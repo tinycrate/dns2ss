@@ -7,6 +7,8 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.net.VpnService
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import com.tiny.dns2ss.MainActivity
@@ -14,19 +16,41 @@ import com.tiny.dns2ss.R
 
 class QuickTileService : TileService() {
     companion object {
+        private val mainHandler = Handler(Looper.getMainLooper())
+
+        @Volatile
+        private var instance: QuickTileService? = null
+
         fun requestUpdate(context: android.content.Context) {
-            runCatching {
-                TileService.requestListeningState(
-                    context,
-                    ComponentName(context, QuickTileService::class.java),
-                )
+            val current = instance
+            if (current != null) {
+                // The tile is already bound; update it directly. requestListeningState
+                // would bind it asynchronously and can visibly lag behind a revoke.
+                mainHandler.post { runCatching { current.updateTile() } }
+            } else {
+                runCatching {
+                    TileService.requestListeningState(
+                        context,
+                        ComponentName(context, QuickTileService::class.java),
+                    )
+                }
             }
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
     }
 
     override fun onStartListening() {
         super.onStartListening()
         updateTile()
+    }
+
+    override fun onDestroy() {
+        if (instance === this) instance = null
+        super.onDestroy()
     }
 
     override fun onClick() {
@@ -105,7 +129,9 @@ class QuickTileService : TileService() {
         tile.icon = Icon.createWithResource(this, R.drawable.ic_tile)
         tile.state = when (state) {
             VpnRunState.RUNNING, VpnRunState.STARTING -> Tile.STATE_ACTIVE
-            VpnRunState.STOPPING -> Tile.STATE_UNAVAILABLE
+            // A stop in progress is already off from the user's perspective;
+            // UNAVAILABLE looked lit until the asynchronous teardown finished.
+            VpnRunState.STOPPING -> Tile.STATE_INACTIVE
             VpnRunState.STOPPED, VpnRunState.ERROR -> Tile.STATE_INACTIVE
         }
         tile.subtitle = stateText
