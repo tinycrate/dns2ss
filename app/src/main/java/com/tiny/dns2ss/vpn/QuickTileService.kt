@@ -38,14 +38,16 @@ class QuickTileService : TileService() {
         }
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-    }
-
     override fun onStartListening() {
         super.onStartListening()
+        // getQsTile() is only valid between onStartListening and onStopListening.
+        instance = this
         updateTile()
+    }
+
+    override fun onStopListening() {
+        if (instance === this) instance = null
+        super.onStopListening()
     }
 
     override fun onDestroy() {
