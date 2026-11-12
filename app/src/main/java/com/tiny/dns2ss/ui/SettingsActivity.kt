@@ -33,6 +33,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.dnsHost.setText(state.dnsHost)
         binding.dnsPort.setText(state.dnsPort.toString())
         binding.ipv6.isChecked = state.ipv6Enabled
+        binding.autoStartBoot.isChecked = state.autoStartOnBoot
 
         binding.save.setOnClickListener {
             val error = viewModel.save(
@@ -40,6 +41,7 @@ class SettingsActivity : AppCompatActivity() {
                 binding.dnsHost.text?.toString().orEmpty(),
                 binding.dnsPort.text?.toString().orEmpty(),
                 binding.ipv6.isChecked,
+                binding.autoStartBoot.isChecked,
             )
             if (error == null) {
                 Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show()

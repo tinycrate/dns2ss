@@ -43,6 +43,10 @@ class AppPreferences(context: Context) {
         get() = prefs.getBoolean(KEY_IPV6_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_IPV6_ENABLED, value).apply()
 
+    var autoStartOnBoot: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_START_BOOT, false)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_START_BOOT, value).apply()
+
     fun loadValidated(): AppConfig {
         val uri = SsUriParser.parse(ssUri)
         val host = dnsHost.trim()
@@ -60,13 +64,21 @@ class AppPreferences(context: Context) {
         )
     }
 
-    fun save(ssUri: String, mode: VpnMode, dnsHost: String, dnsPort: Int, ipv6Enabled: Boolean = this.ipv6Enabled) {
+    fun save(
+        ssUri: String,
+        mode: VpnMode,
+        dnsHost: String,
+        dnsPort: Int,
+        ipv6Enabled: Boolean = this.ipv6Enabled,
+        autoStartOnBoot: Boolean = this.autoStartOnBoot,
+    ) {
         prefs.edit()
             .putString(KEY_SS_URI, ssUri.trim())
             .putString(KEY_MODE, mode.name)
             .putString(KEY_DNS_HOST, dnsHost.trim())
             .putInt(KEY_DNS_PORT, dnsPort)
             .putBoolean(KEY_IPV6_ENABLED, ipv6Enabled)
+            .putBoolean(KEY_AUTO_START_BOOT, autoStartOnBoot)
             .apply()
     }
 
@@ -77,6 +89,7 @@ class AppPreferences(context: Context) {
         private const val KEY_MODE = "vpn_mode"
         private const val KEY_LOG_VERBOSITY = "log_verbosity"
         private const val KEY_IPV6_ENABLED = "ipv6_enabled"
+        private const val KEY_AUTO_START_BOOT = "auto_start_on_boot"
         const val DEFAULT_DNS_HOST = "127.0.0.1"
         const val DEFAULT_DNS_PORT = 53530
     }

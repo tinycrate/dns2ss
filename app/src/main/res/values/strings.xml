@@ -8,6 +8,8 @@
     <string name="dns_port_hint">Port</string>
     <string name="ipv6_label">Enable IPv6</string>
     <string name="ipv6_desc">Adds IPv6 DNS and routing to the VPN. Disable if your server or network has no IPv6. Applies after a VPN restart.</string>
+    <string name="auto_start_boot_label">Start on boot</string>
+    <string name="auto_start_boot_desc">Starts the VPN after Android boot only when the saved Shadowsocks URI, DNS target, and VPN permission are already valid. Android may wait until after unlock.</string>
     <string name="mode_label">Mode</string>
     <string name="mode_fast">Fast</string>
     <string name="mode_strict">Strict</string>
