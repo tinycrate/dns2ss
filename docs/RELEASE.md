@@ -1,8 +1,8 @@
 # Release preparation
 
-## Features frozen
+## Release scope
 
-No new features are planned for the first release. Changes should be bug fixes, tests, documentation, or build/release plumbing.
+The next release is **1.4.0 / versionCode 14**. It adds opt-in boot auto-start and the Quick Settings tile lifecycle fix. New features require an explicit version bump and a full phone regression before merging to `master`.
 
 ## Build variants
 
@@ -33,22 +33,29 @@ Defaults:
 - mapping: `dist/mapping-<version>.txt`.
 
 Use `-Keystore` and `-Alias` if your key differs; use `-NoSign` to only
-build/test/zipalign.
+build/test/zipalign. `-NoSign` does not require a keystore.
+
+The script requires `JAVA_HOME` and either `ANDROID_SDK_ROOT`/`ANDROID_HOME`
+or `sdk.dir` in `local.properties`; it does not embed machine-specific SDK
+paths. `-Install` uses `adb` from `PATH` (or `ADB`) and warns when the
+installed build may have a different signature.
 
 ### CI/CD mode
 
 Set secrets in the CI environment and pass `-Ci`; no prompt is used:
 
 ```powershell
-$env:DNS2SS_KEYSTORE_PATH = "D:\secrets\dns2ss-release.jks"
+$env:DNS2SS_KEYSTORE_PATH = "<path-outside-repo>/dns2ss-release.jks"
 $env:DNS2SS_KEYSTORE_PASSWORD = "<from CI secret>"
 $env:DNS2SS_KEY_PASSWORD = "<from CI secret>"
 .\scripts\build-release.cmd -Ci
 ```
 
-The script uses `DNS2SS_KEYSTORE_PASSWORD`/`DNS2SS_KEY_PASSWORD` via
-`apksigner` environment arguments, so secrets do not appear in its command
-line. Archive the R8 `mapping.txt` with every release.
+`DNS2SS_KEYSTORE_PATH` is optional if `-Keystore` is passed. The script uses
+`DNS2SS_KEYSTORE_PASSWORD`/`DNS2SS_KEY_PASSWORD` via `apksigner` environment
+arguments, so secrets do not appear in its command line. If
+`DNS2SS_KEY_PASSWORD` is omitted, CI uses the keystore password for the key
+(PKCS12 default). Archive the R8 `mapping.txt` with every release.
 
 ## Compatibility
 
@@ -72,6 +79,10 @@ line. Archive the R8 `mapping.txt` with every release.
 
 The debug build excludes `com.android.shell` from the VPN for local test-server workflows. Release builds do not. Debug builds are debug-key-signed and are not suitable for store distribution.
 
-## Checksums
+## Checksums and artifacts
 
-`third_party/CHECKSUMS.txt` records SHA-256 values for the vendored HEV AAR, sslocal binaries, and the current debug APKs. Refresh it after the final build.
+`third_party/CHECKSUMS.txt` records SHA-256 values for the vendored HEV AAR
+and sslocal binaries only. It does not track generated debug/APK outputs;
+those are ignored by Git and belong in release notes or private test records.
+The signed release APK and `mapping-<version>.txt` stay in `dist/` (ignored)
+and are archived with the release notes.

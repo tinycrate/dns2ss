@@ -12,8 +12,8 @@ android {
         applicationId = "com.tiny.dns2ss"
         minSdk = 29
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.3.3"
+        versionCode = 14
+        versionName = "1.4.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")

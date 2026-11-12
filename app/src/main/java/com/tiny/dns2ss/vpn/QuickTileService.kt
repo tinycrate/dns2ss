@@ -2,7 +2,6 @@ package com.tiny.dns2ss.vpn
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
-import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.net.VpnService
@@ -21,20 +20,12 @@ class QuickTileService : TileService() {
         @Volatile
         private var instance: QuickTileService? = null
 
-        fun requestUpdate(context: android.content.Context) {
-            val current = instance
-            if (current != null) {
-                // The tile is already bound; update it directly. requestListeningState
-                // would bind it asynchronously and can visibly lag behind a revoke.
-                mainHandler.post { runCatching { current.updateTile() } }
-            } else {
-                runCatching {
-                    TileService.requestListeningState(
-                        context,
-                        ComponentName(context, QuickTileService::class.java),
-                    )
-                }
-            }
+        fun requestUpdate() {
+            // getQsTile() is only valid while listening. If no instance is
+            // listening there is no live tile object to update; the system will
+            // call onStartListening() when the tile becomes visible again.
+            val current = instance ?: return
+            mainHandler.post { runCatching { current.updateTile() } }
         }
     }
 

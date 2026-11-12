@@ -25,13 +25,28 @@ Owns:
 
 - Shadowsocks URI;
 - remote DNS host and port;
-- IPv6 toggle.
+- IPv6 toggle;
+- opt-in **Start on boot** switch.
 
-`SettingsViewModel` validates the SS URI and DNS target, saves to `AppPreferences`, and returns user-facing errors. IPv6 and mode changes apply after a VPN restart.
+`SettingsViewModel` validates the SS URI and DNS target, saves to `AppPreferences`, and returns user-facing errors. IPv6 and mode changes apply after a VPN restart. Auto-start is recorded in preferences and consumed by `BootReceiver`; a boot does not re-validate by launching the UI.
 
 ### `DiagnosticsActivity` / `DiagnosticsViewModel`
 
 Displays live diagnostics from `DiagnosticsProvider` and a bounded in-memory log from `VpnLog`. The inline log is a scrolling, non-selectable view so drag gestures reach the scroller. **Select** / long-press opens a read-only selectable editor for copying individual text.
+
+### `BootReceiver`
+
+Receives the manifest-registered `BOOT_COMPLETED` broadcast. `BOOT_COMPLETED` is delivered after unlock, so the receiver does not use direct-boot storage. It starts `DnsVpnService` only when all of these are true:
+
+- the `Start on boot` preference is enabled;
+- the saved SS URI and DNS target validate;
+- `VpnService.prepare(context)` returns null (VPN permission already granted).
+
+A missing permission or invalid config is a silent skip: a receiver cannot show the VPN consent prompt. Force-stopped apps do not receive boot broadcasts.
+
+### `QuickTileService`
+
+The tile updates directly only while the system has called `onStartListening()`, because the `Tile` object is only valid in that window. The cached instance is set in `onStartListening()` and cleared in `onStopListening()`/`onDestroy()`. When no tile is listening there is no live tile object to update; `onStartListening()` reconciles from `VpnStatus` when Quick Settings next opens.
 
 ### `DnsVpnService`
 
@@ -142,7 +157,7 @@ Inside app-private storage:
 
 - `sslocal.json` — temporary SS local config (0600, deleted on stop);
 - `hev.yaml` — temporary hev config (deleted on stop);
-- `shared_prefs/config.xml` — SS URI, DNS target, mode, verbosity, IPv6.
+- `shared_prefs/config.xml` — SS URI, DNS target, mode, verbosity, IPv6, auto-start.
 
 The SS password is in private app storage; it is not written to diagnostics. Trace-level sslocal output can contain config data and is not enabled by default.
 
@@ -150,6 +165,7 @@ The SS password is in private app storage; it is not written to diagnostics. Tra
 
 - Service actions run on `Dispatchers.IO`.
 - `starting`/`stopping` flags serialize lifecycle transitions.
+- A service-instance guard prevents an old `onDestroy()` from overwriting the state of a newly started service.
 - `tproxyLock` serializes native HEV start/stop.
 - Router uses a cached daemon thread pool.
 - DNS tunnel uses one receive thread.

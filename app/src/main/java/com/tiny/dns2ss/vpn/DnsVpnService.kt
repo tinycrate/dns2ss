@@ -52,6 +52,9 @@ class DnsVpnService : VpnService() {
         private const val TUN_V6 = "fd00::1"
         private const val DNS_V6 = "fd00::2"
 
+        @Volatile
+        private var activeInstance: DnsVpnService? = null
+
         fun start(context: Context) {
             val intent = Intent(context, DnsVpnService::class.java).setAction(ACTION_START)
             ContextCompat.startForegroundService(context, intent)
@@ -92,8 +95,9 @@ class DnsVpnService : VpnService() {
 
     override fun onCreate() {
         super.onCreate()
+        activeInstance = this
         createChannel()
-        VpnStatus.quickTileRefresh = { QuickTileService.requestUpdate(this) }
+        VpnStatus.quickTileRefresh = { QuickTileService.requestUpdate() }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -481,8 +485,20 @@ class DnsVpnService : VpnService() {
         cleanup()
         runCatching { stopForegroundCompat() }
         serviceScope.cancel()
-        if (VpnStatus.data.value.state == VpnRunState.RUNNING) {
-            VpnStatus.set(VpnRunState.STOPPED, currentMode, "")
+        // Normalize a teardown that happened outside requestStop(). Only the
+        // current service instance may clear state; an old instance must not
+        // overwrite a newly started one. ERROR is already a terminal/inactive state.
+        if (activeInstance === this) {
+            activeInstance = null
+            when (VpnStatus.data.value.state) {
+                VpnRunState.STARTING,
+                VpnRunState.RUNNING,
+                VpnRunState.STOPPING,
+                -> VpnStatus.set(VpnRunState.STOPPED, currentMode, "")
+                VpnRunState.STOPPED,
+                VpnRunState.ERROR,
+                -> Unit
+            }
         }
         super.onDestroy()
     }

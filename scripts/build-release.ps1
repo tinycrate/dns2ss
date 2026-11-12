@@ -11,8 +11,23 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repo = Split-Path $PSScriptRoot -Parent
-$sdk = if ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } elseif ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "D:\AndroidToolchain\sdk" }
-$jdk = if ($env:JAVA_HOME) { $env:JAVA_HOME } else { "D:\AndroidToolchain\jdk-17" }
+$sdk = if ($env:ANDROID_SDK_ROOT) {
+    $env:ANDROID_SDK_ROOT
+} elseif ($env:ANDROID_HOME) {
+    $env:ANDROID_HOME
+} else {
+    $localProperties = Join-Path $repo "local.properties"
+    $sdkLine = if (Test-Path $localProperties) {
+        Get-Content $localProperties | Where-Object { $_ -match '^sdk\.dir=' } | Select-Object -First 1
+    }
+    if ($sdkLine) {
+        $sdkLine.Substring(8).Replace('\\', '\').Replace('\:', ':')
+    }
+}
+if (-not $sdk -or -not (Test-Path $sdk)) {
+    throw "Set ANDROID_SDK_ROOT or ANDROID_HOME (or sdk.dir in local.properties)."
+}
+$jdk = if ($env:JAVA_HOME) { $env:JAVA_HOME } else { throw "Set JAVA_HOME to JDK 17." }
 $buildTools = Join-Path $sdk "build-tools\35.0.0"
 $gradle = Join-Path $repo "gradlew.bat"
 $apksigner = Join-Path $buildTools "apksigner.bat"
@@ -32,11 +47,15 @@ if (-not $OutDir) { $OutDir = Join-Path $repo "dist" }
 foreach ($tool in @($gradle, $apksigner, $zipalign)) {
     if (-not (Test-Path $tool)) { throw "Required tool not found: $tool" }
 }
-if (-not (Test-Path $Keystore)) { throw "Keystore not found: $Keystore" }
-if (-not $NoSign -and -not $Ci -and $env:DNS2SS_KEYSTORE_PASSWORD -eq $null) {
-    # local interactive mode: apksigner will prompt for the password
-} elseif ($Ci -and -not $env:DNS2SS_KEYSTORE_PASSWORD) {
+if (-not $NoSign -and -not (Test-Path $Keystore)) {
+    throw "Keystore not found: $Keystore"
+}
+if ($Ci -and -not $env:DNS2SS_KEYSTORE_PASSWORD) {
     throw "CI mode requires DNS2SS_KEYSTORE_PASSWORD"
+}
+if ($Ci -and -not $env:DNS2SS_KEY_PASSWORD) {
+    # PKCS12 normally uses the same password for the store and key.
+    $env:DNS2SS_KEY_PASSWORD = $env:DNS2SS_KEYSTORE_PASSWORD
 }
 
 $env:JAVA_HOME = $jdk
@@ -112,9 +131,11 @@ Write-Host "Signed APK: $signed" -ForegroundColor Green
 Write-Host "SHA-256:    $hash" -ForegroundColor Green
 
 if ($Install) {
-    $adb = if ($env:ADB) { $env:ADB } else { "D:\Tools\platform-tools\adb.exe" }
-    if (Test-Path $adb) {
-        & $adb install -r $signed
+    $adb = if ($env:ADB) { $env:ADB } else { "adb" }
+    $adbCommand = Get-Command $adb -ErrorAction SilentlyContinue
+    if ($adbCommand) {
+        Write-Warning "If a differently signed build is installed, uninstall it before installing this APK."
+        & $adbCommand.Source install -r $signed
     } else {
         Write-Warning "adb not found; install manually: adb install -r `"$signed`""
     }

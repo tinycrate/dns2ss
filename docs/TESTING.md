@@ -5,8 +5,8 @@
 From the repository root:
 
 ```powershell
-$env:JAVA_HOME = 'D:\AndroidToolchain\jdk-17'
-$env:ANDROID_SDK_ROOT = 'D:\AndroidToolchain\sdk'
+$env:JAVA_HOME = '<path-to-jdk-17>'
+$env:ANDROID_SDK_ROOT = '<path-to-android-sdk>'
 .\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :testclient:assembleDebug
 ```
 
@@ -104,9 +104,26 @@ java tools/testdns/TestDnsServer.java 53530
 
 Run the SS server separately and point the app's remote DNS target at the test DNS server. The `tools/testdns` server is a test aid, not part of the APK.
 
+## Boot auto-start
+
+1. Enable **Start on boot** in Settings and save a valid config.
+2. Start dns2ss once and grant VPN permission; stop it.
+3. Reboot the device. After unlock, confirm the VPN notification, `tun0`, and the landing screen show it running.
+4. Disable the setting, reboot, and confirm dns2ss does not start.
+5. Revoke VPN permission or use an invalid config and confirm the boot path skips without crashing.
+
+`BOOT_COMPLETED` is protected and cannot be sent with `adb shell am broadcast`; the final check must be a real reboot. A force-stopped app receives no boot broadcast until it is opened again.
+
+## Quick Settings tile lifecycle
+
+- With the tile visible, start and stop from the tile and from the landing page; the label and active state must update both ways.
+- Start another VPN while dns2ss is running. dns2ss must be revoked and the tile must show inactive promptly.
+- Close and reopen Quick Settings; the tile must reconcile from the current service state.
+- If the tile ever remains stale while the landing page shows the correct state, record whether reopening Quick Settings or killing the app fixes it.
+
 ## WSA test record
 
-Environment-specific notes and limitations from the emulator run are kept in [`tests/wsa-2026-11-07.md`](../tests/wsa-2026-11-07.md). Those notes are intentionally excluded from the main README.
+The emulator notes are historical and environment-specific: [`tests/wsa-2026-11-07.md`](../tests/wsa-2026-11-07.md). They are not current release acceptance and are intentionally excluded from the main README.
 
 ## Physical-phone checklist
 
@@ -121,3 +138,5 @@ Environment-specific notes and limitations from the emulator run are kept in [`t
 - Applied log verbosity changes after Stop/Start and is shown in the summary.
 - Punch-hole/status-bar insets are clear on all three screens.
 - Speed test numbers appear in direct/full metrics in the appropriate mode.
+- Auto-start on boot is verified with a real reboot for enabled/disabled/missing-permission cases.
+- Quick Settings tile recovers after external revoke, close/reopen, and repeated start/stop.

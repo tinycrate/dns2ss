@@ -11,7 +11,7 @@ Signed-off-by: Your Name <you@example.com>
 ```
 
 - Do not commit `local.properties`, build outputs, APKs, keystores, passwords, or captured device logs.
-- Do not add a remote DNS provider or analytics dependency.
+- Do not add a hosted DNS-provider integration, analytics, crash reporting, or remote configuration dependency. A user-configured remote resolver endpoint is the core feature.
 
 ## Code style
 

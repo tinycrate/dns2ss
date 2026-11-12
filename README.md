@@ -61,8 +61,8 @@ VpnService TUN
 Requirements: JDK 17, Android SDK platform 35, build-tools 35.0.0.
 
 ```powershell
-$env:JAVA_HOME = 'D:\AndroidToolchain\jdk-17'
-$env:ANDROID_SDK_ROOT = 'D:\AndroidToolchain\sdk'
+$env:JAVA_HOME = '<path-to-jdk-17>'
+$env:ANDROID_SDK_ROOT = '<path-to-android-sdk>'
 .\gradlew.bat assembleDebug
 ```
 
@@ -84,16 +84,17 @@ Test client:
 2. Open **Settings** and enter a Shadowsocks URI (`ss://...`) and the remote DNS target (`127.0.0.1:53530` by default). The **Enable IPv6** switch applies after a VPN restart; disable it if the server or network has no usable IPv6.
 3. Select Fast, Strict, or Full on the landing page.
 4. Press Start and grant VPN permission.
-5. Use the Quick Settings tile after the first successful start. The tile shows the selected/active mode in its label and reconnects on mode changes.
+5. Optionally enable **Start on boot** in Settings. It starts the VPN after boot only when the saved config is valid and VPN permission was already granted; Android may wait until after unlock.
+6. Use the Quick Settings tile after the first successful start. The tile shows the selected/active mode in its label and reconnects on mode changes.
 
 The landing page is status + mode + power only. Configuration is on the Settings page; counters, cache stats, routed resolver IPs, log controls, and logs are on Diagnostics.
 
 ### Quick Settings tile
 
 - First tap before configuration/permission opens dns2ss with a message and starts the consent flow.
-- Tile state updates optimistically on tap.
+- Tile state updates optimistically on tap and is refreshed while the tile is listening.
 - The tile shows the mode in its label (some launchers do not render `Tile.subtitle`); its subtitle/state description carries the run state.
-- Mode changes update the tile through the service state.
+- Mode changes update the tile through the service state. An external VPN revoke marks the tile inactive immediately.
 
 ## Diagnostics
 
@@ -134,7 +135,7 @@ The JVM suite currently has 23 tests covering URI parsing, SS/HEV config builder
 - [Release](docs/RELEASE.md) — build variants, signing, compatibility, release checklist.
 - [Contributing](CONTRIBUTING.md) — commit discipline, style, security expectations.
 
-Repository layout: `app/` (Android app), `tools/testclient/` (separate test APK), `tools/testdns/` (JDK test DNS server), `tests/` (environment-specific notes), `scripts/` (vendored artifact helper), `third_party/` (licenses/checksums).
+Repository layout: `app/` (Android app), `tools/testclient/` (separate test APK), `tools/testdns/` (JDK test DNS server), `tests/` (historical environment notes), `scripts/` (release and vendor helpers), `third_party/` (licenses/checksums).
 
 ## Limitations
 
@@ -146,6 +147,7 @@ Repository layout: `app/` (Android app), `tools/testclient/` (separate test APK)
 - Apps that explicitly bind sockets to the underlying network bypass the VPN.
 - The SS server hostname is resolved by `sslocal` using the underlying network before/outside the tunnel; use an IP if that metadata leak matters.
 - No per-app mode, always-on/lockdown, or 32-bit ABIs.
+- Boot auto-start does not prompt for missing VPN permission; enable it after dns2ss has started successfully at least once. Force-stopped apps receive no boot broadcast until opened again.
 - The debug APK is debug-signed; a private release keystore is required for distribution.
 - Physical-phone behavior remains the final acceptance gate; use [docs/TESTING.md](docs/TESTING.md) for the checklist.
 

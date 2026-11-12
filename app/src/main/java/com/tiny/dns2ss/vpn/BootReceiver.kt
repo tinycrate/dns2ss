@@ -17,7 +17,11 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = AppPreferences(context)
         if (!prefs.autoStartOnBoot) return
         if (runCatching { prefs.loadValidated() }.isFailure) return
-        val permission = runCatching { VpnService.prepare(context) }.getOrNull()
+        val permission = try {
+            VpnService.prepare(context)
+        } catch (_: Throwable) {
+            return
+        }
         if (permission != null) return
         runCatching { DnsVpnService.start(context) }
     }
