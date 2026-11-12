@@ -102,7 +102,7 @@ The temporary JSON config is mode 0600 and deleted on stop. The process is monit
 
 ### HEV
 
-`hev-socks5-tunnel` is the TUN-to-SOCKS engine. The app excludes itself from the VPN so its upstream connections do not loop. Debug builds additionally exclude `com.android.shell` for local emulator testing only.
+`hev-socks5-tunnel` is the TUN-to-SOCKS engine. The app excludes itself from the VPN so its upstream connections do not loop. Debug builds additionally exclude `com.android.shell` for local emulator testing only; release builds do not exclude shell.
 
 `misc`/`socks5` settings include `pipeline: true`; this avoids the first-UDP-association stall that otherwise dominates cold DNS latency.
 
@@ -149,7 +149,20 @@ A `ConnectivityManager` network callback watches non-VPN networks. A debounced r
 
 `VpnLog` is a 250-line in-memory ring. sslocal's JSON log level only distinguishes Info/Debug/Trace, so real filtering is done with `RUST_LOG` (off/error/warn/info/debug). Inline logging defaults to Warnings.
 
-`AppDiagnostics` is read on demand by the Diagnostics screen. Counters are atomics maintained in the router/DNS tunnel; there is no periodic stats poll.
+`AppDiagnostics` is read on demand by the Diagnostics screen. Counters are atomics maintained in the router/DNS tunnel; there is no periodic stats poll. The no-wrap view scrolls in both directions; **Wrap log lines** switches to a wrapped view. **Select** (or long-press) opens a read-only selectable log dialog, and **Copy** copies the visible log.
+
+## Limitations and operational notes
+
+- Private DNS/DoT (port 853) and DoH (port 443) bypass port 53. Disable Private DNS, disable browser secure DNS, and block DoH hostnames in the remote resolver where possible.
+- Fast mode intentionally does not capture hardcoded plain DNS to arbitrary servers; only the system resolver path and the current underlying resolver IPs are routed.
+- Loopback DNS (`127.0.0.1:53`/`::1`) cannot be captured by a VPN.
+- Apps that explicitly bind sockets to the underlying network bypass the VPN.
+- When IPv6 is disabled, IPv6 is not tunneled; apps may still use IPv6 through the underlying network. Disable IPv6 on the network itself for a hard block.
+- `sslocal` resolves the SS server hostname using the underlying network before/outside the tunnel; use an IP if that metadata leak matters.
+- `sslocal`'s `no valid UDP server serving` warning is a startup load-balancer probe. With one configured server it still uses that server; successful UDP associations confirm forwarding.
+- TCP port 53 is proxied too, so `sslocal` may establish a TCP tunnel for DNS fallback/truncated responses or clients preferring TCP.
+- Traffic counters include TCP relay bytes and UDP payloads. Fast-mode non-DNS traffic bypasses the app and is not measured.
+- The app has no per-app routing, always-on/lockdown, or 32-bit ABIs.
 
 ## Data and files
 

@@ -83,6 +83,6 @@ The debug build excludes `com.android.shell` from the VPN for local test-server 
 
 `third_party/CHECKSUMS.txt` records SHA-256 values for the vendored HEV AAR
 and sslocal binaries only. It does not track generated debug/APK outputs;
-those are ignored by Git and belong in release notes or private test records.
+those are ignored by Git and belong in the release notes.
 The signed release APK and `mapping-<version>.txt` stay in `dist/` (ignored)
 and are archived with the release notes.
