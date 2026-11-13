@@ -4,11 +4,6 @@
 
 - Keep commits focused: one feature, bug fix, or coherent test/doc change per commit.
 - Run `:app:testDebugUnitTest` and `:app:assembleDebug` before committing.
-- Sign off commits:
-
-```text
-Signed-off-by: Your Name <you@example.com>
-```
 
 - Do not commit `local.properties`, build outputs, APKs, keystores, passwords, or captured device logs.
 - Do not add a hosted DNS-provider integration, analytics, crash reporting, or remote configuration dependency. A user-configured remote resolver endpoint is the core feature.
